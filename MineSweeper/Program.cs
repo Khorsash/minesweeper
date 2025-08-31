@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection.Metadata;
 using ConsoleMenu;
 
 namespace MineSweeper
@@ -164,7 +165,9 @@ namespace MineSweeper
         // za sad 9x16, ali kasnije to moze da se promeni
         // da se pita u korisnika
         // ili bude samo po default-u drugacije
-        static void MineSweeperGame(int r = 16, int c = 9, int bc = 14)
+        static void MineSweeperGame(int r = 16, int c = 9, int bc = 14,
+                                        ConsoleColor selColor = ConsoleColor.Green,
+                                        ConsoleColor errColor = ConsoleColor.Red)
         { 
             bool gameRunning = true;
             bool boardIsGenerated = false;
@@ -185,7 +188,7 @@ namespace MineSweeper
             while (gameRunning)
             {
                 ClearConsole();
-                DrawBoard(ref board, x, y, false, Console.ForegroundColor);
+                DrawBoard(ref board, x, y, false, Console.ForegroundColor, selColor, errColor);
                 cntr = 0;
                 for (int i = 0; i < r; i++)
                 {
@@ -264,7 +267,7 @@ namespace MineSweeper
                                 }
                                 gameRunning = false;
                                 ClearConsole();
-                                DrawBoard(ref board, x, y, true, Console.ForegroundColor);
+                                DrawBoard(ref board, x, y, true, Console.ForegroundColor, selColor, errColor);
                                 Console.WriteLine("Game Over");
                                 Console.WriteLine("(Pritisnite koje bilo dugme da biste izasli)");
                                 Console.ReadKey();
@@ -277,8 +280,11 @@ namespace MineSweeper
         static void Main(string[] args)
         {
             Console.OutputEncoding = System.Text.Encoding.UTF8;
+            int[] allColors = new int[16];
+            for (int i = 0; i < 16; i++) allColors[i] = i;
             string[] menuOptions = new string[4] {"Nova igra", "Promeniti tezinu", "Podesavnja", "Izlaz"};
             Dictionary<string, SettingOption> gameMode = new Dictionary<string, SettingOption>();
+            Dictionary<string, SettingOption> settings = new Dictionary<string, SettingOption>();
             Dictionary<string, (int, int)> sizes = new Dictionary<string, (int, int)>();
             Dictionary<string, int> bombCount = new Dictionary<string, int>();
             sizes["9x9"] = (9, 9);
@@ -297,6 +303,10 @@ namespace MineSweeper
 
             gameMode["Dimenzije"] = new StringOption(sizes.Keys.ToArray(), 1);
             gameMode["Tezina"] = new IntRangeOption(1, 3, 1);
+
+            settings["Boja izabrane celije"] = new ColorOption(allColors, 10); // po default-u zeleni
+            settings["Boja pogresne celije"] = new ColorOption(allColors, 12); // po default-u crveni
+
             bool running = true;
             while (running)
             {
@@ -308,11 +318,17 @@ namespace MineSweeper
                         (int, int) size = sizes[dmns];
                         IntRangeOption hrd = (IntRangeOption)gameMode["Tezina"];
                         int bc = hrd.Value * bombCount[dmns];
-                        MineSweeperGame(size.Item1, size.Item2, bc);
+                        MineSweeperGame(size.Item1, size.Item2, bc,
+                                            ((ColorOption)settings["Boja izabrane celije"]).GetColor(),
+                                            ((ColorOption)settings["Boja pogresne celije"]).GetColor());
                         ClearConsole();
                         break;
                     case "Promeniti tezinu":
                         Menu.ChangeSettings(gameMode);
+                        ClearConsole();
+                        break;
+                    case "Podesavnja":
+                        Menu.ChangeSettings(settings);
                         ClearConsole();
                         break;
                     case "Izlaz":

@@ -214,9 +214,9 @@ namespace ConsoleMenu
             }
         }
         public override void SetValue(object value){}
-        public int GetColor()
+        public ConsoleColor GetColor()
         {
-            return Colors[ColorIndex];
+            return (ConsoleColor)Colors[ColorIndex];
         }
     }
     class Menu
