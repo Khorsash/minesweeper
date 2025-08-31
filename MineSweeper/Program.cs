@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Net.Http.Headers;
-using System.Reflection.PortableExecutable;
+
 
 namespace MineSweeper
 {
@@ -20,11 +19,12 @@ namespace MineSweeper
         }
         public override string ToString()
         {
-            // za zatvorenu celiju vracamo "▓▓"(2 razmazka)
+            // za zatvorenu celiju vracamo "▓▓"
+            // a za zatvorenu sa flagom "|>"
             // zbog toga sto u blizu celiji ne moze biti vise 8 bomba
-            // uvek dodamo " "(razmazak) ka broju bomba oko celiji
+            // uvek dodamo "0" ka broju bomba oko celiji
             // (inace "o^" za bombu)
-            return isOpen ? (value >= 0 ? (value > 0 ? "0" + value.ToString() : "░░") : "o^") : (isFlagged ? "I*" : "▓▓");
+            return isOpen ? (value >= 0 ? (value > 0 ? "0" + value.ToString() : "░░") : "o^") : (isFlagged ? "|>" : "▓▓");
         }
     }
     class Program
