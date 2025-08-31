@@ -218,7 +218,13 @@ namespace MineSweeper
                     case ConsoleKey.RightArrow:
                         x = (x + 1) % c;
                         break;
+                    // zbog preskakivanja s jedne na drugu tasteturu
+                    // moze da ne radi "F"
+                    // onda radi "7" ili PageDown
                     case ConsoleKey.F:
+                    case ConsoleKey.D7:
+                    case ConsoleKey.NumPad7:
+                    case ConsoleKey.PageDown:
                         if (!board[y, x].isOpen)
                         {
                             board[y, x].isFlagged = !board[y, x].isFlagged;
