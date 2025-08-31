@@ -36,6 +36,7 @@ namespace MineSweeper
             Console.Clear();
         }
         public static void DrawBoard(ref Cell[,] board, int x1, int y1,
+                                bool gameOver,
                                 ConsoleColor defColor,
                                 ConsoleColor selColor = ConsoleColor.Green,
                                 ConsoleColor errColor = ConsoleColor.Red)
@@ -60,6 +61,13 @@ namespace MineSweeper
                         Console.ForegroundColor = defColor;
                         continue;
                     }
+                    if (gameOver && board[i, j].value == -1)
+                    {
+                        Console.ForegroundColor = errColor;
+                        Console.Write(board[i, j].ToString());
+                        Console.ForegroundColor = defColor;
+                        continue;
+                    }
                     Console.Write(board[i, j].ToString());
                 }
                 Console.WriteLine("|");
@@ -69,7 +77,7 @@ namespace MineSweeper
             Console.Write("└");
             for (int i = 0; i < board.GetLength(1) * 3 - 1; i++) Console.Write("─");
             Console.WriteLine("┘");
-            if (err) Console.WriteLine("Celija je vec otvorena");
+            if (err && !gameOver) Console.WriteLine("Celija je vec otvorena");
         }
 
         static bool IsInside(int x1, int y1, int maxX = 8, int maxY = 15)
@@ -142,7 +150,7 @@ namespace MineSweeper
                     bombsCreated.Add(coords);
                     board[coords.Item1, coords.Item2].value = -1;
                     cnb = NearCoordsRectangle(coords.Item2, coords.Item1, 1, board.GetLength(1) - 1, board.GetLength(0) - 1);
-                    startzone.AddRange(cnb);
+                    // startzone.AddRange(cnb);
                     for (int i = 0; i < cnb.Count; i++)
                     {
                         // povecamo broj bomba u susednim celijama
@@ -177,7 +185,7 @@ namespace MineSweeper
             while (gameRunning)
             {
                 ClearConsole();
-                DrawBoard(ref board, x, y, Console.ForegroundColor);
+                DrawBoard(ref board, x, y, false, Console.ForegroundColor);
                 cntr = 0;
                 for (int i = 0; i < r; i++)
                 {
@@ -256,7 +264,7 @@ namespace MineSweeper
                                 }
                                 gameRunning = false;
                                 ClearConsole();
-                                DrawBoard(ref board, x, y, Console.ForegroundColor);
+                                DrawBoard(ref board, x, y, true, Console.ForegroundColor);
                                 Console.WriteLine("Game Over");
                                 Console.WriteLine("(Pritisnite koje bilo dugme da biste izasli)");
                                 Console.ReadKey();
@@ -279,12 +287,12 @@ namespace MineSweeper
             sizes["16x30"] = (30, 16);
             sizes["30x16"] = (16, 30);
             sizes["30x30"] = (30, 30);
-            bombCount["9x9"] = 4;
-            bombCount["9x16"] = 7;
-            bombCount["16x16"] = 10;
-            bombCount["16x30"] = 12;
-            bombCount["30x16"] = 12;
-            bombCount["30x30"] = 14;
+            bombCount["9x9"] = 6;
+            bombCount["9x16"] = 10;
+            bombCount["16x16"] = 12;
+            bombCount["16x30"] = 14;
+            bombCount["30x16"] = 14;
+            bombCount["30x30"] = 16;
             
 
             gameMode["Dimenzije"] = new StringOption(sizes.Keys.ToArray(), 1);
