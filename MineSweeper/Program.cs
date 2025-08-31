@@ -150,23 +150,17 @@ namespace MineSweeper
             }
             FloodFill(ref board, x0, y0);
         }
-        static void Main(string[] args)
-        {
-            Console.OutputEncoding = System.Text.Encoding.UTF8;
-
+        // za sad 9x16, ali kasnije to moze da se promeni
+        // da se pita u korisnika
+        // ili bude samo po default-u drugacije
+        static void MineSweeperGame(int r = 16, int c = 9, int bc = 14)
+        { 
             bool gameRunning = true;
             bool boardIsGenerated = false;
 
-            // za sad 9x16, ali kasnije to moze da se promeni
-            // da se pita u korisnika
-            // ili bude samo po default-u drugacije
-            int r = 16; // redova
-            int c = 9;  // kolona
             int x = c / 2;
             int y = r / 2 - 1;
 
-            // kolicina bomba
-            int bc = 14;
             int cntr;
 
             Cell[,] board = new Cell[r, c];
@@ -223,18 +217,9 @@ namespace MineSweeper
                     case ConsoleKey.Enter:
                         if (!board[y, x].isOpen && !boardIsGenerated)
                         {
-                            // za debug FloodFill
-
-                            // ClearConsole();
-
                             GenerateBoard(ref board, x, y, bc);
                             board[y, x].isOpen = true;
                             boardIsGenerated = true;
-
-                            // za debug FloodFill
-
-                            // DrawBoard(ref board, x, y, Console.ForegroundColor);
-                            // Console.ReadKey();
 
                             // za debug, otvara svi celije
 
@@ -277,8 +262,11 @@ namespace MineSweeper
                         break;
                 }
             }
-
-
+        }
+        static void Main(string[] args)
+        {
+            Console.OutputEncoding = System.Text.Encoding.UTF8;
+            MineSweeperGame();
         }
     }
 }
