@@ -269,19 +269,50 @@ namespace MineSweeper
         static void Main(string[] args)
         {
             Console.OutputEncoding = System.Text.Encoding.UTF8;
-            string[] menuOptions = new string[4] {"New Game", "Change Mode", "Settings", "Exit"};
+            string[] menuOptions = new string[4] {"Nova igra", "Promeniti tezinu", "Podesavnja", "Izlaz"};
             Dictionary<string, SettingOption> gameMode = new Dictionary<string, SettingOption>();
             Dictionary<string, (int, int)> sizes = new Dictionary<string, (int, int)>();
+            Dictionary<string, int> bombCount = new Dictionary<string, int>();
             sizes["9x9"] = (9, 9);
             sizes["9x16"] = (16, 9);
             sizes["16x16"] = (16, 16);
             sizes["16x30"] = (30, 16);
             sizes["30x16"] = (16, 30);
             sizes["30x30"] = (30, 30);
+            bombCount["9x9"] = 4;
+            bombCount["9x16"] = 7;
+            bombCount["16x16"] = 10;
+            bombCount["16x30"] = 12;
+            bombCount["30x16"] = 12;
+            bombCount["30x30"] = 14;
+            
 
-            gameMode["Size"] = new StringOption(sizes.Keys.ToArray(), 1);
-
-            MineSweeperGame();
+            gameMode["Dimenzije"] = new StringOption(sizes.Keys.ToArray(), 1);
+            gameMode["Tezina"] = new IntRangeOption(1, 3, 1);
+            bool running = true;
+            while (running)
+            {
+                string ch = Menu.MenuShow(Menu.Paginate(menuOptions, 4), 0, "Minesweeper 0.1");
+                switch (ch)
+                {
+                    case "Nova igra":
+                        string dmns = gameMode["Dimenzije"].ToString() ?? "9x16";
+                        (int, int) size = sizes[dmns];
+                        IntRangeOption hrd = (IntRangeOption)gameMode["Tezina"];
+                        int bc = hrd.Value * bombCount[dmns];
+                        MineSweeperGame(size.Item1, size.Item2, bc);
+                        ClearConsole();
+                        break;
+                    case "Promeniti tezinu":
+                        Menu.ChangeSettings(gameMode);
+                        ClearConsole();
+                        break;
+                    case "Izlaz":
+                        running = false;
+                        ClearConsole();
+                        break;
+                }
+            }
         }
     }
 }

@@ -82,7 +82,7 @@ namespace ConsoleMenu
     }
     public class IntOption: SettingOption
     {
-        private int Value;
+        public int Value;
         private int Step;
 
         public IntOption(int value, int step)
@@ -104,7 +104,35 @@ namespace ConsoleMenu
         }
         public override void SetValue(object value){}
     }
-    public class DoubleOption: SettingOption
+    public class IntRangeOption : SettingOption
+    {
+        public int Value;
+        private int Step;
+        private int Start;
+        private int End;
+
+        public IntRangeOption(int start, int end, int step=1)
+        {
+            Value = start;
+            Step = step;
+            Start = start;
+            End = end;
+        }
+        public override void NextValue()
+        {
+            Value = Value == End ? Start : Value+Step;
+        }
+        public override void PreviousValue()
+        {
+            Value = Value == Start ? End : Value-Step;
+        }
+        public override string ToString()
+        {
+            return Value.ToString();
+        }
+        public override void SetValue(object value){}
+    }
+    public class DoubleOption : SettingOption
     {
         private double Value;
         private double Step;
@@ -126,7 +154,7 @@ namespace ConsoleMenu
         {
             return Value.ToString();
         }
-        public override void SetValue(object value){}
+        public override void SetValue(object value) { }
     }
     public class ColorOption: SettingOption
     {
