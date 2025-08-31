@@ -120,7 +120,7 @@ namespace MineSweeper
                 }
             }
         }
-        public static List<(int, int)> GenerateBoard(ref Cell[,] board, int x0, int y0, int bc = 14)
+        public static void GenerateBoard(ref Cell[,] board, int x0, int y0, int bc = 14)
         {
             List<(int, int)> startzone = NearCoordsRectangle(x0, y0, 2, board.GetLength(1) - 1, board.GetLength(0) - 1);
             startzone.Add((y0, x0));
@@ -149,7 +149,6 @@ namespace MineSweeper
                 }
             }
             FloodFill(ref board, x0, y0);
-            return bombsCreated;
         }
         static void Main(string[] args)
         {
@@ -168,9 +167,9 @@ namespace MineSweeper
 
             // kolicina bomba
             int bc = 14;
+            int cntr;
 
             Cell[,] board = new Cell[r, c];
-            List<(int, int)> bombsCreated;
             for (int i = 0; i < r; i++)
             {
                 for (int j = 0; j < c; j++)
@@ -182,18 +181,37 @@ namespace MineSweeper
             {
                 ClearConsole();
                 DrawBoard(ref board, x, y, Console.ForegroundColor);
+                cntr = 0;
+                for (int i = 0; i < r; i++)
+                {
+                    for (int j = 0; j < c; j++)
+                    {
+                        cntr += board[i, j].isOpen ? 1 : 0;
+                    }
+                }
+                if (cntr == r * c - bc)
+                {
+                    Console.WriteLine("Pobeda!");
+                    Console.WriteLine("(Pritisnite koje bilo dugme da biste izasli)");
+                    Console.ReadKey();
+                    break;
+                }
                 switch (Console.ReadKey().Key)
                 {
-                    case ConsoleKey.W: case ConsoleKey.UpArrow:
+                    case ConsoleKey.W:
+                    case ConsoleKey.UpArrow:
                         y = y == 0 ? r - 1 : y - 1;
                         break;
-                    case ConsoleKey.A: case ConsoleKey.LeftArrow:
+                    case ConsoleKey.A:
+                    case ConsoleKey.LeftArrow:
                         x = x == 0 ? c - 1 : x - 1;
                         break;
-                    case ConsoleKey.S: case ConsoleKey.DownArrow:
+                    case ConsoleKey.S:
+                    case ConsoleKey.DownArrow:
                         y = (y + 1) % r;
                         break;
-                    case ConsoleKey.D: case ConsoleKey.RightArrow:
+                    case ConsoleKey.D:
+                    case ConsoleKey.RightArrow:
                         x = (x + 1) % c;
                         break;
                     case ConsoleKey.F:
@@ -209,7 +227,7 @@ namespace MineSweeper
 
                             // ClearConsole();
 
-                            bombsCreated = GenerateBoard(ref board, x, y, bc);
+                            GenerateBoard(ref board, x, y, bc);
                             board[y, x].isOpen = true;
                             boardIsGenerated = true;
 
@@ -252,8 +270,9 @@ namespace MineSweeper
                                 ClearConsole();
                                 DrawBoard(ref board, x, y, Console.ForegroundColor);
                                 Console.WriteLine("Game Over");
+                                Console.WriteLine("(Pritisnite koje bilo dugme da biste izasli)");
+                                Console.ReadKey();
                             }
-
                         }
                         break;
                 }
