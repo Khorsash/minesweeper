@@ -36,8 +36,10 @@ namespace MineSweeper
         }
         public static void DrawBoard(ref Cell[,] board, int x1, int y1,
                                 ConsoleColor defColor,
-                                ConsoleColor selColor = ConsoleColor.Green)
+                                ConsoleColor selColor = ConsoleColor.Green,
+                                ConsoleColor errColor = ConsoleColor.Red)
         {
+            bool err = board[y1, x1].isOpen;
             // gornji deo
             // (u celiji je 2 karaktera)
             Console.Write("┌");
@@ -52,7 +54,7 @@ namespace MineSweeper
                     Console.Write("|");
                     if (y1 == i && x1 == j)
                     {
-                        Console.ForegroundColor = selColor;
+                        Console.ForegroundColor = err || board[y1, x1].isFlagged ? errColor : selColor;
                         Console.Write(board[i, j].ToString());
                         Console.ForegroundColor = defColor;
                         continue;
@@ -66,7 +68,7 @@ namespace MineSweeper
             Console.Write("└");
             for (int i = 0; i < board.GetLength(1) * 3 - 1; i++) Console.Write("─");
             Console.WriteLine("┘");
-            if (board[y1, x1].isOpen) Console.WriteLine("Celija je vec otvorena");
+            if (err) Console.WriteLine("Celija je vec otvorena");
         }
 
         static bool IsInside(int x1, int y1, int maxX = 8, int maxY = 15)
