@@ -222,7 +222,13 @@ namespace MineSweeper
                     case ConsoleKey.RightArrow:
                         x = (x + 1) % c;
                         break;
+                    // zbog preskakivanja s jedne na drugu tasteturu
+                    // moze da ne radi "F"
+                    // onda radi "7" ili PageDown
                     case ConsoleKey.F:
+                    case ConsoleKey.D7:
+                    case ConsoleKey.NumPad7:
+                    case ConsoleKey.PageDown:
                         if (!board[y, x].isOpen)
                         {
                             board[y, x].isFlagged = !board[y, x].isFlagged;
@@ -287,20 +293,20 @@ namespace MineSweeper
             Dictionary<string, SettingOption> settings = new Dictionary<string, SettingOption>();
             Dictionary<string, (int, int)> sizes = new Dictionary<string, (int, int)>();
             Dictionary<string, int> bombCount = new Dictionary<string, int>();
+            int k = 7; // kontrolira balans
             sizes["9x9"] = (9, 9);
             sizes["9x16"] = (16, 9);
             sizes["16x16"] = (16, 16);
             sizes["16x30"] = (30, 16);
             sizes["30x16"] = (16, 30);
             sizes["30x30"] = (30, 30);
-            bombCount["9x9"] = 6;
-            bombCount["9x16"] = 10;
-            bombCount["16x16"] = 12;
-            bombCount["16x30"] = 14;
-            bombCount["30x16"] = 14;
-            bombCount["30x30"] = 16;
+            bombCount["9x9"] = 9*9/k;
+            bombCount["9x16"] = 9*16/k;
+            bombCount["16x16"] = 16*16/k;
+            bombCount["16x30"] = 16*30/k;
+            bombCount["30x16"] = 16*30/k;
+            bombCount["30x30"] = 30*30/k;
             
-
             gameMode["Dimenzije"] = new StringOption(sizes.Keys.ToArray(), 1);
             gameMode["Tezina"] = new IntRangeOption(1, 3, 1);
 
@@ -316,8 +322,7 @@ namespace MineSweeper
                     case "Nova igra":
                         string dmns = gameMode["Dimenzije"].ToString() ?? "9x16";
                         (int, int) size = sizes[dmns];
-                        IntRangeOption hrd = (IntRangeOption)gameMode["Tezina"];
-                        int bc = hrd.Value * bombCount[dmns];
+                        int bc = ((IntRangeOption)gameMode["Tezina"]).Value * bombCount[dmns];
                         MineSweeperGame(size.Item1, size.Item2, bc,
                                             ((ColorOption)settings["Boja izabrane celije"]).GetColor(),
                                             ((ColorOption)settings["Boja pogresne celije"]).GetColor());
