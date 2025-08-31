@@ -24,7 +24,7 @@ namespace MineSweeper
             // zbog toga sto u blizu celiji ne moze biti vise 8 bomba
             // uvek dodamo "0" ka broju bomba oko celiji
             // (inace "o^" za bombu)
-            return isOpen ? (value >= 0 ? (value > 0 ? "0" + value.ToString() : "░░") : "o^") : (isFlagged ? "|>" : "▓▓");
+            return isOpen ? (value >= 0 ? (value > 0 ? " " + value.ToString() : "░░") : "o^") : (isFlagged ? "|>" : "▓▓");
         }
     }
     class Program
@@ -35,7 +35,7 @@ namespace MineSweeper
             Console.Clear();
         }
         public static void DrawBoard(ref Cell[,] board, int x1, int y1,
-                                ConsoleColor defColor = (ConsoleColor)(-1),
+                                ConsoleColor defColor,
                                 ConsoleColor selColor = ConsoleColor.Green)
         {
             // gornji deo
@@ -69,18 +69,23 @@ namespace MineSweeper
             if (board[y1, x1].isOpen) Console.WriteLine("Celija je vec otvorena");
         }
 
-        // Kordinati se vracaju u HashSet
-        // kordinati su u redu y,x u tuple-u
-        // primer:
-        // [][][][][]
-        // [][][][][]
-        // [][]ci[][]
-        // [][][][][]
-        // [][][][][]
-        // zagradi su celije kordinati kojih se vracaju ako pozovemo NearCoordsRectangle(x, y, 2),
-        // a "ci" - celija na kordinatama x, y
-        // pri uslovu da cilj-celija je udalena od svih granica bar na 2 celije
-        // mozemo da definisemo maxX i maxY za donji granice
+        static bool IsInside(int x1, int y1, int maxX = 8, int maxY = 15)
+        {
+            return !(x1 < 0 || y1 < 0 || x1 > maxX || y1 > maxY);
+        }
+
+        /* Kordinati se vracaju u HashSet
+           kordinati su u redu y,x u tuple-u
+           primer:
+           [][][][][]
+           [][][][][]
+           [][]ci[][]
+           [][][][][]
+           [][][][][]
+           zagradi su celije kordinati kojih se vracaju ako pozovemo NearCoordsRectangle(x, y, 2),
+           a "ci" - celija na kordinatama x, y
+           pri uslovu da cilj-celija je udalena od svih granica bar na 2 celije
+           mozemo da definisemo maxX i maxY za donji granice */
         public static List<(int, int)> NearCoordsRectangle(int x0, int y0, int r, int maxX = 8, int maxY = 15)
         {
             List<(int, int)> nearcoords = new List<(int, int)>();
@@ -88,14 +93,34 @@ namespace MineSweeper
             {
                 for (int j = x0 - r; j < x0 + r + 1; j++)
                 {
-                    if (i < 0 || j < 0 || i > maxY || j > maxX || (i == y0 && j == x0)) continue;
+                    if (!IsInside(j, i, maxX, maxY) || (i == y0 && j == x0)) continue;
                     // kordinati su u redu y,x u tuple-u
                     nearcoords.Add((i, j));
                 }
             }
             return nearcoords;
         }
-        static List<(int, int)> GenerateBoard(ref Cell[,] board, int x0, int y0, int bc = 14)
+        public static void FloodFill(ref Cell[,] board, int x0, int y0)
+        {
+            int maxX = board.GetLength(1) - 1;
+            int maxY = board.GetLength(0) - 1;
+            if (!IsInside(x0, y0, maxX, maxY)) return;
+            (int, int)[] coordsToCheck = new (int, int)[4]
+                                            { (y0 - 1, x0), (y0, x0 - 1), (y0 + 1, x0), (y0, x0 + 1) };
+            for (int i = 0; i < 4; i++)
+            {
+                if (IsInside(coordsToCheck[i].Item2, coordsToCheck[i].Item1, maxX, maxY)
+                    && !board[coordsToCheck[i].Item1, coordsToCheck[i].Item2].isOpen)
+                {
+                    board[coordsToCheck[i].Item1, coordsToCheck[i].Item2].isOpen = true;
+                    if (board[coordsToCheck[i].Item1, coordsToCheck[i].Item2].value == 0)
+                    {
+                        FloodFill(ref board, coordsToCheck[i].Item2, coordsToCheck[i].Item1);
+                    }
+                }
+            }
+        }
+        public static List<(int, int)> GenerateBoard(ref Cell[,] board, int x0, int y0, int bc = 14)
         {
             List<(int, int)> startzone = NearCoordsRectangle(x0, y0, 2, board.GetLength(1) - 1, board.GetLength(0) - 1);
             startzone.Add((y0, x0));
@@ -123,9 +148,8 @@ namespace MineSweeper
                     }
                 }
             }
+            FloodFill(ref board, x0, y0);
             return bombsCreated;
-            
-            
         }
         static void Main(string[] args)
         {
@@ -138,7 +162,7 @@ namespace MineSweeper
             // da se pita u korisnika
             // ili bude samo po default-u drugacije
             int r = 16; // redova
-            int c = 16;  // kolona
+            int c = 9;  // kolona
             int x = c / 2;
             int y = r / 2 - 1;
 
@@ -157,7 +181,7 @@ namespace MineSweeper
             while (gameRunning)
             {
                 ClearConsole();
-                DrawBoard(ref board, x, y);
+                DrawBoard(ref board, x, y, Console.ForegroundColor);
                 switch (Console.ReadKey().Key)
                 {
                     case ConsoleKey.W: case ConsoleKey.UpArrow:
@@ -181,9 +205,19 @@ namespace MineSweeper
                     case ConsoleKey.Enter:
                         if (!board[y, x].isOpen && !boardIsGenerated)
                         {
+                            // za debug FloodFill
+
+                            // ClearConsole();
+
                             bombsCreated = GenerateBoard(ref board, x, y, bc);
                             board[y, x].isOpen = true;
                             boardIsGenerated = true;
+
+                            // za debug FloodFill
+
+                            // DrawBoard(ref board, x, y, Console.ForegroundColor);
+                            // Console.ReadKey();
+
                             // za debug, otvara svi celije
 
                             // for (int i = 0; i < r; i++)
@@ -195,7 +229,9 @@ namespace MineSweeper
                             // }
                         }
 
-                        if (!board[y, x].isOpen && boardIsGenerated)
+                        if (!board[y, x].isOpen
+                                && !board[y, x].isFlagged
+                                && boardIsGenerated)
                         {
 
                             if (board[y, x].value != -1)
@@ -214,7 +250,7 @@ namespace MineSweeper
                                 }
                                 gameRunning = false;
                                 ClearConsole();
-                                DrawBoard(ref board, x, y);
+                                DrawBoard(ref board, x, y, Console.ForegroundColor);
                                 Console.WriteLine("Game Over");
                             }
 
