@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Reflection.PortableExecutable;
+using System.Text.RegularExpressions;
 
 
 namespace MineSweeper
@@ -34,13 +36,29 @@ namespace MineSweeper
             Console.WriteLine("\x1b[3J");
             Console.Clear();
         }
+        /// <summary>
+        ///     Funkcija koja vraca celiju na kordinatama X, Y
+        ///     X, Y dobijamo u vidu tuple(y,x)
+        /// </summary>
+        static Cell MtrxYXEl(ref Cell[,] mtrx, (int, int) coords)
+        {
+            return mtrx[coords.Item1, coords.Item2];
+        }
+        static void DrawCell(Cell cell, ConsoleColor color, ConsoleColor defColor)
+        {
+            Console.Write("|");
+            Console.ForegroundColor = color;
+            Console.Write(cell.ToString());
+        }
         public static void DrawBoard(ref Cell[,] board, int x1, int y1,
                                 bool gameOver,
                                 ConsoleColor defColor,
                                 ConsoleColor selColor = ConsoleColor.Green,
                                 ConsoleColor errColor = ConsoleColor.Red)
         {
-            bool err = board[y1, x1].isOpen;
+            // vec otvorena(ALready CHecked)
+            bool alch = board[y1, x1].isOpen;
+            ConsoleColor color = defColor;
             // gornji deo
             // (u celiji je 2 karaktera)
             Console.Write("┌");
@@ -52,22 +70,12 @@ namespace MineSweeper
             {
                 for (int j = 0; j < board.GetLength(1); j++)
                 {
-                    Console.Write("|");
-                    if (y1 == i && x1 == j)
-                    {
-                        Console.ForegroundColor = err || board[y1, x1].isFlagged ? errColor : selColor;
-                        Console.Write(board[i, j].ToString());
-                        Console.ForegroundColor = defColor;
-                        continue;
-                    }
-                    if (gameOver && board[i, j].value == -1)
-                    {
-                        Console.ForegroundColor = errColor;
-                        Console.Write(board[i, j].ToString());
-                        Console.ForegroundColor = defColor;
-                        continue;
-                    }
-                    Console.Write(board[i, j].ToString());
+                    color = (gameOver && board[i, j].value == -1)
+                                ? errColor
+                                : (y1 == i && x1 == j
+                                    ? (alch || board[y1, x1].isFlagged ? errColor : selColor)
+                                    : defColor);
+                    DrawCell(board[i, j], color, defColor);
                 }
                 Console.WriteLine("|");
             }
@@ -76,11 +84,15 @@ namespace MineSweeper
             Console.Write("└");
             for (int i = 0; i < board.GetLength(1) * 3 - 1; i++) Console.Write("─");
             Console.WriteLine("┘");
-            if (err && !gameOver) Console.WriteLine("Celija je vec otvorena");
+            if (alch && !gameOver) Console.WriteLine("Celija je vec otvorena");
         }
 
-        static bool IsInside(int x1, int y1, int maxX = 8, int maxY = 15)
+        static bool IsInside(ref Cell[,] board, (int, int) coords)
         {
+            int y1 = coords.Item1;
+            int x1 = coords.Item2;
+            int maxY = board.GetLength(0);
+            int maxX = board.GetLength(1);
             return !(x1 < 0 || y1 < 0 || x1 > maxX || y1 > maxY);
         }
 
@@ -96,69 +108,64 @@ namespace MineSweeper
            a "ci" - celija na kordinatama x, y
            pri uslovu da cilj-celija je udalena od svih granica bar na 2 celije
            mozemo da definisemo maxX i maxY za donji granice */
-        public static List<(int, int)> NearCoordsRectangle(int x0, int y0, int r, int maxX = 8, int maxY = 15)
+        public static List<(int, int)> NearCoordsRectangle(ref Cell[,] board, (int, int) coords, int r)
         {
+            int y0 = coords.Item1;
+            int x0 = coords.Item2;
             List<(int, int)> nearcoords = new List<(int, int)>();
             for (int i = y0 - r; i < y0 + r + 1; i++)
             {
                 for (int j = x0 - r; j < x0 + r + 1; j++)
                 {
-                    if (!IsInside(j, i, maxX, maxY) || (i == y0 && j == x0)) continue;
+                    if (!IsInside(ref board, (i,j)) || (i == y0 && j == x0)) continue;
                     // kordinati su u redu y,x u tuple-u
                     nearcoords.Add((i, j));
                 }
             }
             return nearcoords;
         }
-        public static void FloodFill(ref Cell[,] board, int x0, int y0)
+        public static void FloodFill(ref Cell[,] board, (int, int) coords)
         {
-            int maxX = board.GetLength(1) - 1;
-            int maxY = board.GetLength(0) - 1;
-            if (!IsInside(x0, y0, maxX, maxY)) return;
-            (int, int)[] coordsToCheck = new (int, int)[4]
-                                            { (y0 - 1, x0), (y0, x0 - 1), (y0 + 1, x0), (y0, x0 + 1) };
+            int y0 = coords.Item1;
+            int x0 = coords.Item2;
+            if (!IsInside(ref board, (y0, x0))) return;
+            (int, int)[] coordsToCheck = new (int, int)[4] { (y0 - 1, x0), (y0, x0 - 1), (y0 + 1, x0), (y0, x0 + 1) };
             for (int i = 0; i < 4; i++)
             {
-                if (IsInside(coordsToCheck[i].Item2, coordsToCheck[i].Item1, maxX, maxY)
-                    && !board[coordsToCheck[i].Item1, coordsToCheck[i].Item2].isOpen)
+                if (IsInside(ref board, coordsToCheck[i])
+                    && !MtrxYXEl(ref board, coordsToCheck[i]).isOpen)
                 {
-                    board[coordsToCheck[i].Item1, coordsToCheck[i].Item2].isOpen = true;
-                    if (board[coordsToCheck[i].Item1, coordsToCheck[i].Item2].value == 0)
-                    {
-                        FloodFill(ref board, coordsToCheck[i].Item2, coordsToCheck[i].Item1);
-                    }
+                    Cell c = MtrxYXEl(ref board, coordsToCheck[i]);
+                    c.isOpen = true;
+                    if (c.value == 0) FloodFill(ref board, coordsToCheck[i]);
                 }
             }
         }
         public static void GenerateBoard(ref Cell[,] board, int x0, int y0, int bc = 14)
         {
-            List<(int, int)> startzone = NearCoordsRectangle(x0, y0, 2, board.GetLength(1) - 1, board.GetLength(0) - 1);
+            List<(int, int)> startzone = NearCoordsRectangle(ref board, (y0, x0), 2);
+            List<(int, int)> bombsCreated = new List<(int, int)>();
             startzone.Add((y0, x0));
             Random r = new Random();
-            // kordinati celija oko bombe
-            List<(int, int)> cnb;
-            int bombsNeeded = bc;
-            List<(int, int)> bombsCreated = new List<(int, int)>();
-            while (bombsCreated.Count < bombsNeeded)
+            while (bombsCreated.Count < bc)
             {
-                // Item1 -> y
-                // Item2 -> x
                 (int, int) coords = (r.Next(board.GetLength(0)), r.Next(board.GetLength(1)));
                 if (!startzone.Contains(coords) && !bombsCreated.Contains(coords))
                 {
                     bombsCreated.Add(coords);
-                    board[coords.Item1, coords.Item2].value = -1;
-                    cnb = NearCoordsRectangle(coords.Item2, coords.Item1, 1, board.GetLength(1) - 1, board.GetLength(0) - 1);
-                    // startzone.AddRange(cnb);
+                    Cell b = MtrxYXEl(ref board, coords);
+                    b.value = -1;
+                    List<(int, int)> cnb = NearCoordsRectangle(ref board, coords, 1);
                     for (int i = 0; i < cnb.Count; i++)
                     {
                         // povecamo broj bomba u susednim celijama
                         // (ako nije bomba)
-                        if (board[cnb[i].Item1, cnb[i].Item2].value != -1) board[cnb[i].Item1, cnb[i].Item2].value++;
+                        Cell c = MtrxYXEl(ref board, cnb[i]);
+                        if (c.value != -1) c.value++;
                     }
                 }
             }
-            FloodFill(ref board, x0, y0);
+            FloodFill(ref board, (y0, x0));
         }
         // za sad 9x16, ali kasnije to moze da se promeni
         // da se pita u korisnika
@@ -170,7 +177,6 @@ namespace MineSweeper
 
             int x = c / 2;
             int y = r / 2 - 1;
-
             int cntr;
 
             Cell[,] board = new Cell[r, c];
