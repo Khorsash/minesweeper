@@ -11,13 +11,27 @@ namespace MineSweeper
         // ako value == -1 -> bomba
         // inace kolicina bomba oko celiji
         public int value;
-        public bool isOpen;
-        public bool isFlagged;
-        public Cell(int vl, bool status)
+        public bool flagged;
+        private bool opened;
+        public Cell(int vl, bool sts)
         {
             value = vl;
-            isOpen = status;
-            isFlagged = false;
+            opened = sts;
+            flagged = false;
+        }
+        public bool isOpened() { return opened; }
+        public bool isBomb() { return value == -1; }
+        public bool isFlagged() { return flagged; }
+        public ConsoleColor getColor(bool isGameOver, bool isSelected,
+                                        ConsoleColor selColor, ConsoleColor errColor, ConsoleColor defColor)
+        {
+            return isGameOver && isBomb() ? errColor : isSelected ? (opened || flagged ? errColor : selColor) : defColor;
+        }
+        public void Open() { opened = true; } 
+        public void PlantBomb() { value = -1; }
+        public void ChangeFlagState()
+        {
+            flagged = !flagged;
         }
         public override string ToString()
         {
@@ -26,7 +40,7 @@ namespace MineSweeper
             // zbog toga sto u blizu celiji ne moze biti vise 8 bomba
             // uvek dodamo "0" ka broju bomba oko celiji
             // (inace "o^" za bombu)
-            return isOpen ? (value >= 0 ? (value > 0 ? " " + value.ToString() : "░░") : "o^") : (isFlagged ? "|>" : "▓▓");
+            return opened ? (value >= 0 ? (value > 0 ? " " + value.ToString() : "░░") : "o^") : (flagged ? "|>" : "▓▓");
         }
     }
     class Program
@@ -40,166 +54,153 @@ namespace MineSweeper
             Console.WriteLine("\x1b[3J");
             Console.Clear();
         }
-        // Funkcija koja crta pole igrice
-        public static void DrawBoard(ref Cell[,] board, int x1, int y1,
-                                bool gameOver,
-                                ConsoleColor defColor,
-                                ConsoleColor selColor = ConsoleColor.Green,
-                                ConsoleColor errColor = ConsoleColor.Red)
+        static void ExitMsg()
         {
-            bool err = board[y1, x1].isOpen;
-            // gornji deo
-            // (u celiji je 2 karaktera)
-            Console.Write("┌");
-            for (int i = 0; i < board.GetLength(1) * 3 - 1; i++) Console.Write("─");
-            Console.WriteLine("┐");
-
-            // srednji deo
+            Console.WriteLine("(Pritisnite koje bilo dugme da biste izasli)");
+            Console.ReadKey();
+        }
+        static Cell MtrxYXEl(ref Cell[,] mtrx, (int, int) coords)
+        {
+            return mtrx[coords.Item1, coords.Item2];
+        }
+        static void OpenBoard(ref Cell[,] board)
+        {
             for (int i = 0; i < board.GetLength(0); i++)
             {
                 for (int j = 0; j < board.GetLength(1); j++)
                 {
-                    Console.Write("|");
-                    // ako izabrana celija
-                    if (y1 == i && x1 == j)
-                    {
-                        // crtamo nju obojenu
-                        Console.ForegroundColor = err || board[y1, x1].isFlagged ? errColor : selColor;
-                        Console.Write(board[i, j].ToString());
-                        Console.ForegroundColor = defColor;
-                        continue;
-                    }
-                    // ako su bombe otvorene onda su nacrtani bojom "errColor"
-                    if (gameOver && board[i, j].value == -1)
-                    {
-                        Console.ForegroundColor = errColor;
-                        Console.Write(board[i, j].ToString());
-                        Console.ForegroundColor = defColor;
-                        continue;
-                    }
-                    Console.Write(board[i, j].ToString());
+                    board[i, j].Open();
+                }
+            }
+        }
+        static bool IsWin(ref Cell[,] board, int bc)
+        {
+            int c = 0;
+            for (int i = 0; i < board.GetLength(0); i++)
+            {
+                for (int j = 0; j < board.GetLength(1); j++)
+                {
+                    c += board[i, j].isOpened() ? 1 : 0;
+                }
+            }
+            return c == board.GetLength(0) * board.GetLength(1) - bc;
+        }
+        static void DrawCell(Cell cell, ConsoleColor color, ConsoleColor defColor)
+        {
+            Console.Write("|");
+            Console.ForegroundColor = color;
+            Console.Write(cell.ToString());
+            Console.ForegroundColor = defColor;
+        }
+        static void DrawOpeningClosing(int n, bool isOpening)
+        {
+            Console.Write(isOpening ? "┌" : "└");
+            for (int i = 0; i < n * 3 - 1; i++) Console.Write("─");
+            Console.WriteLine(isOpening ? "┐" : "┘");
+        }
+
+        static (int, int) RandomCoords(ref Cell[,] board, ref Random r)
+        {
+            return (r.Next(board.GetLength(0)), r.Next(board.GetLength(1)));
+        }
+        public static void DrawBoard(ref Cell[,] board, int x1, int y1,
+                                bool isGameOver,
+                                ConsoleColor defColor,
+                                ConsoleColor selColor = ConsoleColor.Green,
+                                ConsoleColor errColor = ConsoleColor.Red)
+        {
+            Cell chosenCell = board[y1, x1];
+            ConsoleColor color;
+
+            DrawOpeningClosing(board.GetLength(1), true);
+
+            for (int i = 0; i < board.GetLength(0); i++)
+            {
+                for (int j = 0; j < board.GetLength(1); j++)
+                {
+                    color = board[i, j].getColor(isGameOver, i == y1 && j == x1,
+                                                        selColor, errColor, defColor);
+                    DrawCell(board[i, j], color, defColor);
                 }
                 Console.WriteLine("|");
             }
 
-            // donji deo
-            Console.Write("└");
-            for (int i = 0; i < board.GetLength(1) * 3 - 1; i++) Console.Write("─");
-            Console.WriteLine("┘");
-            if (err && !gameOver) Console.WriteLine("Celija je vec otvorena");
-        }
-        // Funkcija koja vraca true ili false u zavisnosti da li je celija unutra pravougaonika
-        // s levim gornjim uglom 0,0 i s desnim donjim maxX, maxY
-        static bool IsInside(int x1, int y1, int maxX = 8, int maxY = 15)
-        {
-            return !(x1 < 0 || y1 < 0 || x1 > maxX || y1 > maxY);
+            DrawOpeningClosing(board.GetLength(1), false);
+
+            if (chosenCell.isOpened() && !isGameOver) Console.WriteLine("Celija je vec otvorena");
         }
 
-        /* Kordinati se vracaju u HashSet
-           kordinati su u redu y,x u tuple-u
-           primer:
-           [][][][][]
-           [][][][][]
-           [][]ci[][]
-           [][][][][]
-           [][][][][]
-           zagradi su celije kordinati kojih se vracaju ako pozovemo NearCoordsRectangle(x, y, r:2),
-           a "ci" - celija na kordinatama x, y
-           pri uslovu da cilj-celija je udalena od svih granica bar na r=2 celije
-           mozemo da definisemo maxX i maxY za donji granice */
-        public static List<(int, int)> NearCoordsRectangle(int x0, int y0, int r, int maxX = 8, int maxY = 15)
+        static bool AreCoordsInside(ref Cell[,] board, (int, int) coords)
         {
+            int y1 = coords.Item1;
+            int x1 = coords.Item2;
+            int maxY = board.GetLength(0);
+            int maxX = board.GetLength(1);
+            return !(x1 < 0 || y1 < 0 || x1 >= maxX || y1 >= maxY);
+        }
+
+        public static List<(int, int)> NearCoordsRectangle(ref Cell[,] board, (int, int) coords, int r)
+        {
+            int y0 = coords.Item1;
+            int x0 = coords.Item2;
             List<(int, int)> nearcoords = new List<(int, int)>();
             for (int i = y0 - r; i < y0 + r + 1; i++)
             {
                 for (int j = x0 - r; j < x0 + r + 1; j++)
                 {
-                    if (!IsInside(j, i, maxX, maxY) || (i == y0 && j == x0)) continue;
+                    if (!AreCoordsInside(ref board, (i, j))) continue;
                     // kordinati su u redu y,x u tuple-u
                     nearcoords.Add((i, j));
                 }
             }
             return nearcoords;
         }
-        // Funkcija koja otvara svi prazni celije pocinjaci od prve izabrane celije
-        // (tj. do cifara)
-        public static void FloodFill(ref Cell[,] board, int x0, int y0)
+        public static void FloodFill(ref Cell[,] board, (int, int) coords)
         {
-            int maxX = board.GetLength(1) - 1;
-            int maxY = board.GetLength(0) - 1;
-            // ako nije unutra polja izadjemo iz funkciji
-            if (!IsInside(x0, y0, maxX, maxY)) return;
-            // kordinati gornje, donje, desne i leve celija od celije x0,y0
-            // (kordinati su u obrnutom redu, odnosno y,x)
-            (int, int)[] coordsToCheck = new (int, int)[4]
-                                            { (y0 - 1, x0), (y0, x0 - 1), (y0 + 1, x0), (y0, x0 + 1) };
+            int y0 = coords.Item1;
+            int x0 = coords.Item2;
+            if (!AreCoordsInside(ref board, coords)) return;
+            (int, int)[] coordsToCheck = new (int, int)[4] { (y0 - 1, x0), (y0, x0 - 1), (y0 + 1, x0), (y0, x0 + 1) };
             for (int i = 0; i < 4; i++)
             {
-                // ako je unutra polja i nije otvorena
-                if (IsInside(coordsToCheck[i].Item2, coordsToCheck[i].Item1, maxX, maxY)
-                    && !board[coordsToCheck[i].Item1, coordsToCheck[i].Item2].isOpen)
+                if (!AreCoordsInside(ref board, coordsToCheck[i])) continue;
+                Cell cell = MtrxYXEl(ref board, coordsToCheck[i]);
+                if (!cell.isOpened())
                 {
-                    // otvaramo nju
-                    board[coordsToCheck[i].Item1, coordsToCheck[i].Item2].isOpen = true;
-                    // ako nije cifra onda idemo dalje
-                    // pa pozovemo FloodFill opet
-                    // da bi ona novi celije otvarala
-                    if (board[coordsToCheck[i].Item1, coordsToCheck[i].Item2].value == 0)
-                    {
-                        FloodFill(ref board, coordsToCheck[i].Item2, coordsToCheck[i].Item1);
-                    }
+                    board[coordsToCheck[i].Item1, coordsToCheck[i].Item2].Open();
+                    if (cell.value == 0) FloodFill(ref board, coordsToCheck[i]);
                 }
             }
         }
-        // Funkcija koja kreira polje 
-        public static void GenerateBoard(ref Cell[,] board, int x0, int y0, int bc = 14)
+        public static void GenerateBoard(ref Cell[,] board, (int, int) coords0, int bc = 14)
         {
-            // Pocetna zona oko prve izabrane celije
-            // u kojoj se ne kreiraju bombe
-            List<(int, int)> startzone = NearCoordsRectangle(x0, y0, 2, board.GetLength(1) - 1, board.GetLength(0) - 1);
-            startzone.Add((y0, x0));
-            Random r = new Random();
-            // kordinati celija oko bombe
-            List<(int, int)> cnb;
-            // kolicina bomba
-            int bombsNeeded = bc;
+            List<(int, int)> adjToStartCells = NearCoordsRectangle(ref board, coords0, 1);
             List<(int, int)> bombsCreated = new List<(int, int)>();
-            while (bombsCreated.Count < bombsNeeded)
+            Random r = new Random();
+            while (bombsCreated.Count < bc)
             {
-                // Item1 -> y
-                // Item2 -> x
-                (int, int) coords = (r.Next(board.GetLength(0)), r.Next(board.GetLength(1)));
-                if (!startzone.Contains(coords) && !bombsCreated.Contains(coords))
+                (int, int) coords1 = RandomCoords(ref board, ref r);
+                if (!adjToStartCells.Contains(coords1) && !bombsCreated.Contains(coords1))
                 {
-                    bombsCreated.Add(coords);
-                    board[coords.Item1, coords.Item2].value = -1;
-                    cnb = NearCoordsRectangle(coords.Item2, coords.Item1, 1, board.GetLength(1) - 1, board.GetLength(0) - 1);
-                    // startzone.AddRange(cnb);
+                    bombsCreated.Add(coords1);
+                    board[coords1.Item1, coords1.Item2].PlantBomb();
+                    List<(int, int)> cnb = NearCoordsRectangle(ref board, coords1, 1);
                     for (int i = 0; i < cnb.Count; i++)
                     {
-                        // povecamo broj bomba u susednim celijama
-                        // (ako nije bomba)
-                        if (board[cnb[i].Item1, cnb[i].Item2].value != -1) board[cnb[i].Item1, cnb[i].Item2].value++;
+                        Cell cell = MtrxYXEl(ref board, cnb[i]);
+                        if (!cell.isBomb()) board[cnb[i].Item1, cnb[i].Item2].value++;
                     }
                 }
             }
-            FloodFill(ref board, x0, y0);
+            FloodFill(ref board, coords0);
         }
-        // za sad 9x16, ali kasnije to moze da se promeni
-        // da se pita u korisnika
-        // ili bude samo po default-u drugacije
-        static void MineSweeperGame(int r = 16, int c = 9, int bc = 14,
-                                        ConsoleColor selColor = ConsoleColor.Green,
-                                        ConsoleColor errColor = ConsoleColor.Red)
+        static void MineSweeperGame(int r = 16, int c = 9, int bc = 14)
         { 
             bool gameRunning = true;
             bool boardIsGenerated = false;
 
             int x = c / 2;
             int y = r / 2 - 1;
-
-            // brojac otvorenih celija koje nisu bombe
-            int cntr;
 
             Cell[,] board = new Cell[r, c];
             for (int i = 0; i < r; i++)
@@ -212,23 +213,11 @@ namespace MineSweeper
             while (gameRunning)
             {
                 ClearConsole();
-                DrawBoard(ref board, x, y, false, Console.ForegroundColor, selColor, errColor);
-                cntr = 0;
-                // brojanje otvorenih celija koje nisu bombe
-                for (int i = 0; i < r; i++)
-                {
-                    for (int j = 0; j < c; j++)
-                    {
-                        cntr += board[i, j].isOpen ? 1 : 0;
-                    }
-                }
-                // ako kol. svih celija - kol. bomba = kol. otvorenih celija koje nisu bombe
-                // onda smo pobedili
-                if (cntr == r * c - bc)
+                DrawBoard(ref board, x, y, false, Console.ForegroundColor);
+                if (IsWin(ref board, bc))
                 {
                     Console.WriteLine("Pobeda!");
-                    Console.WriteLine("(Pritisnite koje bilo dugme da biste izasli)");
-                    Console.ReadKey();
+                    ExitMsg();
                     break;
                 }
                 // provera korisnickog unosa
@@ -251,7 +240,6 @@ namespace MineSweeper
                     case ConsoleKey.RightArrow:
                         x = (x + 1) % c;
                         break;
-
                     // zbog preskakivanja s jedne na drugu tasteturu
                     // moze da ne radi "F"
                     // onda radi "7" ili PageDown
@@ -259,64 +247,50 @@ namespace MineSweeper
                     case ConsoleKey.D7:
                     case ConsoleKey.NumPad7:
                     case ConsoleKey.PageDown:
-                        if (!board[y, x].isOpen)
+                        if (!board[y, x].isOpened())
                         {
-                            board[y, x].isFlagged = !board[y, x].isFlagged;
+                            board[y, x].ChangeFlagState();
                         }
                         break;
                     // potvrdjenje izbora
                     case ConsoleKey.Enter:
-                        // ako jos nije polje generisano
-                        // (ali izabrana prva celija)
-                        if (!board[y, x].isOpen && !boardIsGenerated)
+                        if (board[y, x].isOpened()) break;
+                        if (!boardIsGenerated)
                         {
-                            GenerateBoard(ref board, x, y, bc);
-                            board[y, x].isOpen = true;
+                            GenerateBoard(ref board, (y, x), bc);
+                            board[y, x].Open();
                             boardIsGenerated = true;
 
                             // za debug, otvara svi celije
+                            // OpenBoard(ref board);
 
-                            // for (int i = 0; i < r; i++)
-                            // {
-                            //     for (int j = 0; j < c; j++)
-                            //     {
-                            //         board[i, j].isOpen = true;
-                            //     }
-                            // }
-                            // gameRunning = false;
-                            // Console.WriteLine("Game Over");
-                            // Console.WriteLine("(Pritisnite koje bilo dugme da biste izasli)");
-                            // Console.ReadKey();
+                            break;
                         }
-                        // ako nije izabrana celija otvorena
-                        // i nije s flagom
-                        if (!board[y, x].isOpen
-                                && !board[y, x].isFlagged
-                                && boardIsGenerated)
+
+                        if (!board[y, x].isOpened()
+                                && !board[y, x].isFlagged())
                         {
-                            // ako nije bomba jednostavno otvaramo
-                            if (board[y, x].value != -1)
-                            {
-                                board[y, x].isOpen = true;
-                            }
-                            // inace gubimo
-                            else
+
+                            if (board[y, x].isBomb())
                             {
                                 // otvaramo svi celije
-                                for (int i = 0; i < r; i++)
-                                {
-                                    for (int j = 0; j < c; j++)
-                                    {
-                                        board[i, j].isOpen = true;
-                                    }
-                                }
+                                
                                 gameRunning = false;
                                 ClearConsole();
-                                DrawBoard(ref board, x, y, true, Console.ForegroundColor, selColor, errColor);
+                                OpenBoard(ref board);
+                                DrawBoard(ref board, x, y, true, Console.ForegroundColor);
                                 Console.WriteLine("Game Over");
-                                Console.WriteLine("(Pritisnite koje bilo dugme da biste izasli)");
-                                Console.ReadKey();
+                                ExitMsg();
                             }
+                            if (board[y, x].value != 0)
+                            {
+                                board[y, x].Open();
+                            }
+                            else
+                            {
+                                FloodFill(ref board, (y, x));
+                            }
+                            
                         }
                         break;
                 }
@@ -382,9 +356,7 @@ namespace MineSweeper
                         string dmns = gameMode["Dimenzije"].ToString() ?? "9x16";
                         (int, int) size = sizes[dmns];
                         int bc = ((IntRangeOption)gameMode["Tezina"]).Value * bombCount[dmns];
-                        MineSweeperGame(size.Item1, size.Item2, bc,
-                                            ((ColorOption)settings["Boja izabrane celije"]).GetColor(),
-                                            ((ColorOption)settings["Boja pogresne celije"]).GetColor());
+                        MineSweeperGame(size.Item1, size.Item2, bc);
                         ClearConsole();
                         break;
                     case "Promeniti tezinu":
