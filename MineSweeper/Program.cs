@@ -85,6 +85,22 @@ namespace MineSweeper
             }
             return c == board.GetLength(0) * board.GetLength(1) - bc;
         }
+        static void SuccessfullyFoundBombCount(ref Cell[,] board, out int sfbc, out int nab)
+        {
+            int counter = 0;
+            int counter1 = 0;
+            for (int i = 0; i < board.GetLength(0); i++)
+            {
+                for (int j = 0; j < board.GetLength(1); j++)
+                {
+                    if (!board[i, j].isFlagged()) continue;
+                    if (board[i, j].isBomb()) counter++;
+                    else counter1++;
+                }
+            }
+            sfbc = counter;
+            nab = counter1;
+        }
         static void DrawCell(Cell cell, ConsoleColor color, ConsoleColor defColor)
         {
             Console.Write("|");
@@ -106,9 +122,11 @@ namespace MineSweeper
         public static void DrawBoard(ref Cell[,] board, int x1, int y1,
                                 bool isGameOver,
                                 ConsoleColor defColor,
-                                ConsoleColor selColor = ConsoleColor.Green,
-                                ConsoleColor errColor = ConsoleColor.Red)
+                                (ConsoleColor, ConsoleColor) colors = default)
         {
+            ConsoleColor selColor = colors.Item1;
+            ConsoleColor errColor = colors.Item2;
+
             Cell chosenCell = board[y1, x1];
             ConsoleColor color;
 
@@ -165,23 +183,24 @@ namespace MineSweeper
             {
                 if (!AreCoordsInside(ref board, coordsToCheck[i])) continue;
                 Cell cell = MtrxYXEl(ref board, coordsToCheck[i]);
-                if (!cell.isOpened())
+                if (!cell.isOpened() && !cell.isBomb())
                 {
                     board[coordsToCheck[i].Item1, coordsToCheck[i].Item2].Open();
                     if (cell.value == 0) FloodFill(ref board, coordsToCheck[i]);
                 }
             }
         }
-        public static void GenerateBoard(ref Cell[,] board, (int, int) coords0, int bc = 14)
+        public static void GenerateBoard(ref Cell[,] board, (int, int) coords0, int bc = 14, bool addStartZone = false)
         {
-            List<(int, int)> adjToStartCells = NearCoordsRectangle(ref board, coords0, 1);
+            // List<(int, int)> adjToStartCells = NearCoordsRectangle(ref board, coords0, 1);
             List<(int, int)> bombsCreated = new List<(int, int)>();
             Random r = new Random();
             while (bombsCreated.Count < bc)
             {
                 (int, int) coords1 = RandomCoords(ref board, ref r);
-                if (!adjToStartCells.Contains(coords1) && !bombsCreated.Contains(coords1))
+                if (coords1 != coords0 && !bombsCreated.Contains(coords1))
                 {
+                    // && (addStartZone ? adjToStartCells.Contains(coords1) : true)
                     bombsCreated.Add(coords1);
                     board[coords1.Item1, coords1.Item2].PlantBomb();
                     List<(int, int)> cnb = NearCoordsRectangle(ref board, coords1, 1);
@@ -194,7 +213,7 @@ namespace MineSweeper
             }
             FloodFill(ref board, coords0);
         }
-        static void MineSweeperGame(int r = 16, int c = 9, int bc = 14)
+        static void MineSweeperGame(int r = 16, int c = 9, int bc = 14, (ConsoleColor, ConsoleColor) colors = default)
         { 
             bool gameRunning = true;
             bool boardIsGenerated = false;
@@ -213,7 +232,7 @@ namespace MineSweeper
             while (gameRunning)
             {
                 ClearConsole();
-                DrawBoard(ref board, x, y, false, Console.ForegroundColor);
+                DrawBoard(ref board, x, y, false, Console.ForegroundColor, colors);
                 if (IsWin(ref board, bc))
                 {
                     Console.WriteLine("Pobeda!");
@@ -274,12 +293,16 @@ namespace MineSweeper
                             if (board[y, x].isBomb())
                             {
                                 // otvaramo svi celije
-                                
+                                int sfbc;
+                                int nab;
+                                SuccessfullyFoundBombCount(ref board, out sfbc, out nab);
                                 gameRunning = false;
                                 ClearConsole();
                                 OpenBoard(ref board);
-                                DrawBoard(ref board, x, y, true, Console.ForegroundColor);
+                                DrawBoard(ref board, x, y, true, Console.ForegroundColor, colors);
                                 Console.WriteLine("Game Over");
+                                Console.WriteLine("Vi ste uspesno nasli "+sfbc.ToString()+" bomba");
+                                Console.WriteLine("I promasili sa "+nab.ToString()+" bomba");
                                 ExitMsg();
                             }
                             if (board[y, x].value != 0)
@@ -307,6 +330,9 @@ namespace MineSweeper
             int[] allColors = new int[16];
             for (int i = 0; i < 16; i++) allColors[i] = i;
 
+            (ConsoleColor, ConsoleColor) gameColors;
+            (ConsoleColor, ConsoleColor) menuColors;
+
             // opcije meni
             string[] menuOptions = new string[4] {"Nova igra", "Promeniti tezinu", "Podesavnja", "Izlaz"};
 
@@ -323,7 +349,7 @@ namespace MineSweeper
             // kontrolira balans
             // ako vece, onda manje bomba
             // ako manje, onda vise bomba
-            int k = 7; 
+            int k = 9; 
 
             sizes["9x9"] = (9, 9);
             sizes["9x16"] = (16, 9);
@@ -331,12 +357,12 @@ namespace MineSweeper
             sizes["16x30"] = (30, 16);
             sizes["30x16"] = (16, 30);
             sizes["30x30"] = (30, 30);
-            bombCount["9x9"] = 9*9/k;
-            bombCount["9x16"] = 9*16/k;
-            bombCount["16x16"] = 16*16/k;
-            bombCount["16x30"] = 16*30/k;
-            bombCount["30x16"] = 16*30/k;
-            bombCount["30x30"] = 30*30/k;
+            bombCount["9x9"] = 9*9;
+            bombCount["9x16"] = 9*16;
+            bombCount["16x16"] = 16*16;
+            bombCount["16x30"] = 16*30;
+            bombCount["30x16"] = 16*30;
+            bombCount["30x30"] = 30*30;
             
             // podesavanja tezine igrice
             gameMode["Dimenzije"] = new StringOption(sizes.Keys.ToArray(), 1);
@@ -345,18 +371,24 @@ namespace MineSweeper
             // podesavanja igrice
             settings["Boja izabrane celije"] = new ColorOption(allColors, 10); // po default-u zeleni
             settings["Boja pogresne celije"] = new ColorOption(allColors, 12); // po default-u crveni
+            settings["Boja teksta aplikacije"] = new ColorOption(allColors, 7); // po default-u sivi
+            settings["Boja izabranog elementa meni"] = new ColorOption(allColors, 10); // po default-u zeleni
 
             bool running = true;
             while (running)
             {
-                string ch = Menu.MenuShow(Menu.Paginate(menuOptions, 4), 0, "Minesweeper 0.1");
+                menuColors = (((ColorOption)settings["Boja elementa meni"]).GetColor(),
+                                ((ColorOption)settings["Boja izabranog elementa meni"]).GetColor());
+                gameColors = (((ColorOption)settings["Boja izabrane celije"]).GetColor(),
+                                ((ColorOption)settings["Boja pogresne celije"]).GetColor());
+                string ch = Menu.MenuShow(Menu.Paginate(menuOptions, 4), 0, "Minesweeper 0.1", menuColors);
                 switch (ch)
                 {
                     case "Nova igra":
                         string dmns = gameMode["Dimenzije"].ToString() ?? "9x16";
                         (int, int) size = sizes[dmns];
-                        int bc = ((IntRangeOption)gameMode["Tezina"]).Value * bombCount[dmns];
-                        MineSweeperGame(size.Item1, size.Item2, bc);
+                        int bc = bombCount[dmns] / (k - ((IntRangeOption)gameMode["Tezina"]).Value);
+                        MineSweeperGame(size.Item1, size.Item2, bc, gameColors);
                         ClearConsole();
                         break;
                     case "Promeniti tezinu":
@@ -364,7 +396,9 @@ namespace MineSweeper
                         ClearConsole();
                         break;
                     case "Podesavnja":
-                        Menu.ChangeSettings(settings);
+                        Menu.ChangeSettings(settings, 
+                                            ((ColorOption)settings["Boja izabranog elementa meni"]).GetColor(),
+                                            ((ColorOption)settings["Boja elementa meni"]).GetColor());
                         ClearConsole();
                         break;
                     case "Izlaz":
