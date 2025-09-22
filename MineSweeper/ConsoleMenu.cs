@@ -318,11 +318,12 @@ namespace ConsoleMenu
             }
         }
         public static void ShowSettings(Dictionary<string, SettingOption> settings, int selected, 
-                                        ConsoleColor selectionColor=ConsoleColor.Green,
-                                        ConsoleColor consoleColor = ConsoleColor.Gray)
+                                        (ConsoleColor, ConsoleColor) colors = default)
         {
             Console.WriteLine("\x1b[3J");
             Console.Clear();
+            ConsoleColor consoleColor = colors.Item1;
+            ConsoleColor selectionColor = colors.Item2;
             string[] settingNames = settings.Keys.ToArray();
             ConsoleColor valueSelectedColor = ConsoleColor.White;
             for(int i=0; i<settingNames.Length; i++)
@@ -336,14 +337,13 @@ namespace ConsoleMenu
 
         }
         public static void ChangeSettings(Dictionary<string, SettingOption> settings, 
-                                           ConsoleColor selectionColor = ConsoleColor.Green,
-                                            ConsoleColor consoleColor = ConsoleColor.Gray)
+                                           (ConsoleColor, ConsoleColor) colors = default)
         {
             string[] settingNames = settings.Keys.ToArray();
             int currentSetting = 0;
             Console.WriteLine("\x1b[3J");
             Console.Clear();
-            ShowSettings(settings, currentSetting, selectionColor, consoleColor);
+            ShowSettings(settings, currentSetting, colors);
             while(true)
             {
                 ConsoleKeyInfo key = Console.ReadKey();
@@ -351,19 +351,19 @@ namespace ConsoleMenu
                 {
                     case ConsoleKey.DownArrow:
                         currentSetting = (currentSetting+1) % settingNames.Length;
-                        ShowSettings(settings, currentSetting, selectionColor, consoleColor);
+                        ShowSettings(settings, currentSetting, colors);
                         break;
                     case ConsoleKey.UpArrow:
                         currentSetting = currentSetting == 0 ? settingNames.Length-1 : currentSetting-1;
-                        ShowSettings(settings, currentSetting, selectionColor, consoleColor);
+                        ShowSettings(settings, currentSetting, colors);
                         break;
                     case ConsoleKey.LeftArrow:
                         settings[settingNames[currentSetting]].PreviousValue();
-                        ShowSettings(settings, currentSetting, selectionColor, consoleColor);
+                        ShowSettings(settings, currentSetting, colors);
                         break;
                     case ConsoleKey.RightArrow:
                         settings[settingNames[currentSetting]].NextValue();
-                        ShowSettings(settings, currentSetting, selectionColor, consoleColor);
+                        ShowSettings(settings, currentSetting, colors);
                         break;
                     case ConsoleKey.Escape:
                         Console.WriteLine("\x1b[3J");

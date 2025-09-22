@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection.Metadata;
 using ConsoleMenu;
 
 namespace MineSweeper
@@ -377,7 +376,7 @@ namespace MineSweeper
             bool running = true;
             while (running)
             {
-                menuColors = (((ColorOption)settings["Boja elementa meni"]).GetColor(),
+                menuColors = (((ColorOption)settings["Boja teksta aplikacije"]).GetColor(),
                                 ((ColorOption)settings["Boja izabranog elementa meni"]).GetColor());
                 gameColors = (((ColorOption)settings["Boja izabrane celije"]).GetColor(),
                                 ((ColorOption)settings["Boja pogresne celije"]).GetColor());
@@ -392,13 +391,11 @@ namespace MineSweeper
                         ClearConsole();
                         break;
                     case "Promeniti tezinu":
-                        Menu.ChangeSettings(gameMode);
+                        Menu.ChangeSettings(gameMode, menuColors);
                         ClearConsole();
                         break;
                     case "Podesavnja":
-                        Menu.ChangeSettings(settings, 
-                                            ((ColorOption)settings["Boja izabranog elementa meni"]).GetColor(),
-                                            ((ColorOption)settings["Boja elementa meni"]).GetColor());
+                        Menu.ChangeSettings(settings, menuColors);
                         ClearConsole();
                         break;
                     case "Izlaz":
