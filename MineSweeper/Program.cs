@@ -364,29 +364,29 @@ namespace MineSweeper
             bombCount["30x30"] = 30*30;
             
             // podesavanja tezine igrice
-            gameMode["Dimenzije"] = new StringOption(sizes.Keys.ToArray(), 1);
-            gameMode["Tezina"] = new IntRangeOption(1, 3, 1);
+            gameMode["size"] = new StringOption("Dimenzije", sizes.Keys.ToArray(), 1);
+            gameMode["difficulty"] = new IntRangeOption("Tezina", 1, 3, 1);
 
             // podesavanja igrice
-            settings["Boja izabrane celije"] = new ColorOption(allColors, 10); // po default-u zeleni
-            settings["Boja pogresne celije"] = new ColorOption(allColors, 12); // po default-u crveni
-            settings["Boja teksta aplikacije"] = new ColorOption(allColors, 7); // po default-u sivi
-            settings["Boja izabranog elementa meni"] = new ColorOption(allColors, 10); // po default-u zeleni
+            settings["gameselectcolor"] = new ColorOption("Boja izabrane celije", allColors, 10); // po default-u zeleni
+            settings["gameerrorcolor"] = new ColorOption("Boja pogresne celije", allColors, 12); // po default-u crveni
+            settings["baseforeground"] = new ColorOption("Boja teksta aplikacije", allColors, 7); // po default-u sivi
+            settings["menuselectcolor"] = new ColorOption("Boja izabranog elementa meni", allColors, 10); // po default-u zeleni
 
             bool running = true;
             while (running)
             {
-                menuColors = (((ColorOption)settings["Boja teksta aplikacije"]).GetColor(),
-                                ((ColorOption)settings["Boja izabranog elementa meni"]).GetColor());
-                gameColors = (((ColorOption)settings["Boja izabrane celije"]).GetColor(),
-                                ((ColorOption)settings["Boja pogresne celije"]).GetColor());
+                menuColors = (((ColorOption)settings["baseforeground"]).GetColor(),
+                                ((ColorOption)settings["menuselectcolor"]).GetColor());
+                gameColors = (((ColorOption)settings["gameselectcolor"]).GetColor(),
+                                ((ColorOption)settings["gameerrorcolor"]).GetColor());
                 string ch = Menu.MenuShow(Menu.Paginate(menuOptions, 4), 0, "Minesweeper 0.1", menuColors);
                 switch (ch)
                 {
                     case "Nova igra":
-                        string dmns = gameMode["Dimenzije"].ToString() ?? "9x16";
+                        string dmns = gameMode["size"].ToString() ?? "9x16";
                         (int, int) size = sizes[dmns];
-                        int bc = bombCount[dmns] / (k - ((IntRangeOption)gameMode["Tezina"]).Value);
+                        int bc = bombCount[dmns] / (k - ((IntRangeOption)gameMode["difficulty"]).Value);
                         MineSweeperGame(size.Item1, size.Item2, bc, gameColors);
                         ClearConsole();
                         break;

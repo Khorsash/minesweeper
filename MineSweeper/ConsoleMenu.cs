@@ -9,13 +9,15 @@ namespace ConsoleMenu
         public abstract void NextValue();
         public abstract void PreviousValue();
         public abstract void SetValue(object value);
+        public string Name;
+        public SettingOption(string nm) { Name = nm; }
     }
 
     public class StringOption: SettingOption
     {
         private string[] Options;
         private int ValueIndex;
-        public StringOption(string[] options, int valueIndex)
+        public StringOption(string nm, string[] options, int valueIndex) : base(nm)
         {
             Options = options;
             ValueIndex = valueIndex;
@@ -38,7 +40,7 @@ namespace ConsoleMenu
     public class StringSetValue: SettingOption
     {
         private string Value;
-        public StringSetValue(string value)
+        public StringSetValue(string nm, string value) : base(nm)
         {
             Value = value;
         }
@@ -62,7 +64,7 @@ namespace ConsoleMenu
     public class BoolOption: SettingOption
     {
         private bool Value;
-        public BoolOption(bool value)
+        public BoolOption(string nm, bool value) : base(nm)
         {
             Value = value;
         }
@@ -85,7 +87,7 @@ namespace ConsoleMenu
         public int Value;
         private int Step;
 
-        public IntOption(int value, int step)
+        public IntOption(string nm, int value, int step) : base(nm)
         {
             Value = value;
             Step = step;
@@ -111,7 +113,7 @@ namespace ConsoleMenu
         private int Start;
         private int End;
 
-        public IntRangeOption(int start, int end, int step=1)
+        public IntRangeOption(string nm, int start, int end, int step=1) : base(nm)
         {
             Value = start;
             Step = step;
@@ -137,7 +139,7 @@ namespace ConsoleMenu
         private double Value;
         private double Step;
 
-        public DoubleOption(double value, double step)
+        public DoubleOption(string nm, double value, double step) : base(nm)
         {
             Value = value;
             Step = step;
@@ -160,7 +162,7 @@ namespace ConsoleMenu
     {
         private int[] Colors;
         private int ColorIndex;
-        public ColorOption(int[] colors, int valueIndex)
+        public ColorOption(string nm, int[] colors, int valueIndex) : base(nm)
         {
             Colors = colors;
             ColorIndex = valueIndex;
@@ -330,7 +332,7 @@ namespace ConsoleMenu
             {
                 if(i==selected) Console.ForegroundColor = selectionColor;
                 else Console.ForegroundColor = consoleColor;
-                Console.Write(settingNames[i]+": ");
+                Console.Write(settings[settingNames[i]].Name+": ");
                 if(i==selected) Console.ForegroundColor = valueSelectedColor;
                 Console.WriteLine("< "+settings[settingNames[i]].ToString()+" >");
             }
