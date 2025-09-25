@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using ConsoleMenu;
 
@@ -44,6 +45,35 @@ namespace MineSweeper
     }
     class Program
     {
+        static Dictionary<string, SettingOption> LoadSettings(string settingsFilePath)
+        {
+            int[] allColors = new int[16];
+            for (int i = 0; i < 16; i++) allColors[i] = i;
+            Dictionary<string, SettingOption> settings = new Dictionary<string, SettingOption>();
+            string txt = File.ReadAllText(settingsFilePath, System.Text.Encoding.UTF8);
+            string[] txtl = txt.Split(";");
+            for (int i = 0; i < txtl.Length; i++) SettingOption.ParseAndAddSetting(ref settings, txtl[i]);
+            return settings;
+        }
+        static void SaveSettings(string settingsFilePath, Dictionary<string, SettingOption> settings)
+        {
+            string sttngsTxt = "";
+            foreach (string k in settings.Keys.ToArray())
+            {
+                sttngsTxt += settings[k].Format(k) + ";";
+            }
+            File.WriteAllText(settingsFilePath, sttngsTxt.Substring(0, sttngsTxt.Length-1));
+        }
+        static Dictionary<string, SettingOption> DefaultSettings()
+        {
+            int[] allColors = ColorOption.AllColors();
+            Dictionary<string, SettingOption> settings = new Dictionary<string, SettingOption>();
+            settings["gameselectcolor"] = new ColorOption("Boja izabrane celije", allColors, 10); // po default-u zeleni
+            settings["gameerrorcolor"] = new ColorOption("Boja pogresne celije", allColors, 12); // po default-u crveni
+            settings["baseforeground"] = new ColorOption("Boja teksta aplikacije", allColors, 7); // po default-u sivi
+            settings["menuselectcolor"] = new ColorOption("Boja izabranog elementa meni", allColors, 10); // po default-u zeleni
+            return settings;
+        }
         // koristim ANSI kod da bih izbrisao kes konsoli, 
         // jer Console.Clear(); izbrisa samo vidljiv kes 
         // jer ako ostaje nevidljivi kes, na scroll mozemo 
@@ -304,15 +334,11 @@ namespace MineSweeper
                                 Console.WriteLine("I promasili sa "+nab.ToString()+" bomba");
                                 ExitMsg();
                             }
-                            if (board[y, x].value != 0)
-                            {
-                                board[y, x].Open();
-                            }
                             else
                             {
-                                FloodFill(ref board, (y, x));
+                                board[y, x].Open();
+                                if (board[y, x].value == 0) FloodFill(ref board, (y, x));
                             }
-                            
                         }
                         break;
                 }
@@ -325,20 +351,17 @@ namespace MineSweeper
             // nego u ASCII
             Console.OutputEncoding = System.Text.Encoding.UTF8;
 
-            // sve boje
-            int[] allColors = new int[16];
-            for (int i = 0; i < 16; i++) allColors[i] = i;
-
             (ConsoleColor, ConsoleColor) gameColors;
             (ConsoleColor, ConsoleColor) menuColors;
 
             // opcije meni
-            string[] menuOptions = new string[4] {"Nova igra", "Promeniti tezinu", "Podesavnja", "Izlaz"};
+            string[] menuOptions = new string[4] { "Nova igra", "Promeniti tezinu", "Podesavnja", "Izlaz" };
 
             // podesavanja tezine igrice
             Dictionary<string, SettingOption> gameMode = new Dictionary<string, SettingOption>();
             // podesavanja igrice
-            Dictionary<string, SettingOption> settings = new Dictionary<string, SettingOption>();
+            Dictionary<string, SettingOption> settings;
+            string settingsPath = "settings.txt";
 
             // dimenzije polja
             Dictionary<string, (int, int)> sizes = new Dictionary<string, (int, int)>();
@@ -348,7 +371,7 @@ namespace MineSweeper
             // kontrolira balans
             // ako vece, onda manje bomba
             // ako manje, onda vise bomba
-            int k = 9; 
+            int k = 9;
 
             sizes["9x9"] = (9, 9);
             sizes["9x16"] = (16, 9);
@@ -356,22 +379,26 @@ namespace MineSweeper
             sizes["16x30"] = (30, 16);
             sizes["30x16"] = (16, 30);
             sizes["30x30"] = (30, 30);
-            bombCount["9x9"] = 9*9;
-            bombCount["9x16"] = 9*16;
-            bombCount["16x16"] = 16*16;
-            bombCount["16x30"] = 16*30;
-            bombCount["30x16"] = 16*30;
-            bombCount["30x30"] = 30*30;
-            
+            bombCount["9x9"] = 9 * 9;
+            bombCount["9x16"] = 9 * 16;
+            bombCount["16x16"] = 16 * 16;
+            bombCount["16x30"] = 16 * 30;
+            bombCount["30x16"] = 16 * 30;
+            bombCount["30x30"] = 30 * 30;
+
             // podesavanja tezine igrice
             gameMode["size"] = new StringOption("Dimenzije", sizes.Keys.ToArray(), 1);
             gameMode["difficulty"] = new IntRangeOption("Tezina", 1, 3, 1);
 
-            // podesavanja igrice
-            settings["gameselectcolor"] = new ColorOption("Boja izabrane celije", allColors, 10); // po default-u zeleni
-            settings["gameerrorcolor"] = new ColorOption("Boja pogresne celije", allColors, 12); // po default-u crveni
-            settings["baseforeground"] = new ColorOption("Boja teksta aplikacije", allColors, 7); // po default-u sivi
-            settings["menuselectcolor"] = new ColorOption("Boja izabranog elementa meni", allColors, 10); // po default-u zeleni
+            try
+            {
+                settings = LoadSettings(settingsPath);
+            }
+            catch
+            {
+                settings = DefaultSettings();
+                SaveSettings(settingsPath, settings);
+            }
 
             bool running = true;
             while (running)
@@ -404,6 +431,7 @@ namespace MineSweeper
                         break;
                 }
             }
+            SaveSettings(settingsPath, settings);
         }
     }
 }

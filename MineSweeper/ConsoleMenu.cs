@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Linq;
 
 namespace ConsoleMenu
@@ -11,9 +12,25 @@ namespace ConsoleMenu
         public abstract void SetValue(object value);
         public string Name;
         public SettingOption(string nm) { Name = nm; }
+        public static void ParseAndAddSetting(ref Dictionary<string, SettingOption> settings, string sttng)
+        {
+            string key = sttng.Split(":")[0];
+            string type = sttng.Split(":")[1];
+            string content = sttng.Split(":")[2];
+            switch (type)
+            {
+                case "color":
+                    settings[key] = ColorOption.ParseContent(content);
+                    break;
+                case "string":
+                    settings[key] = StringOption.ParseContent(content);
+                    break;
+            }
+        }
+        public abstract string Format(string keyName);
     }
 
-    public class StringOption: SettingOption
+    public class StringOption : SettingOption
     {
         private string[] Options;
         private int ValueIndex;
@@ -24,20 +41,31 @@ namespace ConsoleMenu
         }
         public override void NextValue()
         {
-            ValueIndex = (ValueIndex+1) % Options.Length;
+            ValueIndex = (ValueIndex + 1) % Options.Length;
         }
         public override void PreviousValue()
         {
-            ValueIndex = ValueIndex == 0 ? Options.Length-1 : ValueIndex-1;
+            ValueIndex = ValueIndex == 0 ? Options.Length - 1 : ValueIndex - 1;
         }
         public override string ToString()
         {
             return Options[ValueIndex];
         }
-
-        public override void SetValue(object value){}
+        public override void SetValue(object value) { }
+        public static StringOption ParseContent(string cnt)
+        {
+            string[] values = cnt.Split(",");
+            int indx = Convert.ToInt16(values[0]);
+            string[] options = new string[values.Length - 1];
+            for (int i = 0; i < options.Length; i++) options[i] = values[i + 1];
+            return new StringOption("", options, indx);
+        }
+        public override string Format(string keyName)
+        {
+            return keyName+":string:"+ValueIndex.ToString() + "," + string.Join(",", Options);
+        }
     }
-    public class StringSetValue: SettingOption
+    public class StringSetValue : SettingOption
     {
         private string Value;
         public StringSetValue(string nm, string value) : base(nm)
@@ -60,8 +88,10 @@ namespace ConsoleMenu
         {
             Value = Convert.ToString(value) ?? "";
         }
+        public override string Format(string keyName)
+        { return ""; }
     }
-    public class BoolOption: SettingOption
+    public class BoolOption : SettingOption
     {
         private bool Value;
         public BoolOption(string nm, bool value) : base(nm)
@@ -80,9 +110,11 @@ namespace ConsoleMenu
         {
             return Value.ToString();
         }
-        public override void SetValue(object value){}
+        public override void SetValue(object value) { }
+        public override string Format(string keyName)
+        { return ""; }
     }
-    public class IntOption: SettingOption
+    public class IntOption : SettingOption
     {
         public int Value;
         private int Step;
@@ -104,7 +136,9 @@ namespace ConsoleMenu
         {
             return Value.ToString();
         }
-        public override void SetValue(object value){}
+        public override void SetValue(object value) { }
+        public override string Format(string keyName)
+        { return ""; }
     }
     public class IntRangeOption : SettingOption
     {
@@ -113,7 +147,7 @@ namespace ConsoleMenu
         private int Start;
         private int End;
 
-        public IntRangeOption(string nm, int start, int end, int step=1) : base(nm)
+        public IntRangeOption(string nm, int start, int end, int step = 1) : base(nm)
         {
             Value = start;
             Step = step;
@@ -122,17 +156,19 @@ namespace ConsoleMenu
         }
         public override void NextValue()
         {
-            Value = Value == End ? Start : Value+Step;
+            Value = Value == End ? Start : Value + Step;
         }
         public override void PreviousValue()
         {
-            Value = Value == Start ? End : Value-Step;
+            Value = Value == Start ? End : Value - Step;
         }
         public override string ToString()
         {
             return Value.ToString();
         }
-        public override void SetValue(object value){}
+        public override void SetValue(object value) { }
+        public override string Format(string keyName)
+        { return ""; }
     }
     public class DoubleOption : SettingOption
     {
@@ -157,6 +193,8 @@ namespace ConsoleMenu
             return Value.ToString();
         }
         public override void SetValue(object value) { }
+        public override string Format(string keyName)
+        { return ""; }
     }
     public class ColorOption: SettingOption
     {
@@ -190,6 +228,20 @@ namespace ConsoleMenu
         public ConsoleColor GetColor()
         {
             return (ConsoleColor)Colors[ColorIndex];
+        }
+        public static int[] AllColors()
+        {
+            int[] allColors = new int[16];
+            for (int i = 0; i < 16; i++) allColors[i] = i;
+            return allColors;
+        }
+        public static ColorOption ParseContent(string cnt)
+        {
+            return new ColorOption("", AllColors(), Convert.ToInt16(cnt));
+        }
+        public override string Format(string keyName)
+        {
+            return keyName + ":color:" + Colors[ColorIndex].ToString();
         }
     }
     class Menu
