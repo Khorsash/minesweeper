@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Drawing;
 using System.Linq;
 
 namespace ConsoleMenu
@@ -9,7 +8,6 @@ namespace ConsoleMenu
     {
         public abstract void NextValue();
         public abstract void PreviousValue();
-        public abstract void SetValue(object value);
         public string Name;
         public SettingOption(string nm) { Name = nm; }
         public static void ParseAndAddSetting(ref Dictionary<string, SettingOption> settings, string sttng)
@@ -20,10 +18,10 @@ namespace ConsoleMenu
             switch (type)
             {
                 case "color":
-                    settings[key] = ColorOption.ParseContent(content);
+                    settings[key] = ColorOption.ParseFrom(content);
                     break;
                 case "string":
-                    settings[key] = StringOption.ParseContent(content);
+                    settings[key] = StringOption.ParseFrom(content);
                     break;
             }
         }
@@ -51,8 +49,7 @@ namespace ConsoleMenu
         {
             return Options[ValueIndex];
         }
-        public override void SetValue(object value) { }
-        public static StringOption ParseContent(string cnt)
+        public static StringOption ParseFrom(string cnt)
         {
             string[] values = cnt.Split(",");
             int indx = Convert.ToInt16(values[0]);
@@ -64,32 +61,6 @@ namespace ConsoleMenu
         {
             return keyName+":string:"+ValueIndex.ToString() + "," + string.Join(",", Options);
         }
-    }
-    public class StringSetValue : SettingOption
-    {
-        private string Value;
-        public StringSetValue(string nm, string value) : base(nm)
-        {
-            Value = value;
-        }
-        public override void NextValue()
-        {
-
-        }
-        public override void PreviousValue()
-        {
-
-        }
-        public override string ToString()
-        {
-            return Value;
-        }
-        public override void SetValue(object value)
-        {
-            Value = Convert.ToString(value) ?? "";
-        }
-        public override string Format(string keyName)
-        { return ""; }
     }
     public class BoolOption : SettingOption
     {
@@ -110,7 +81,6 @@ namespace ConsoleMenu
         {
             return Value.ToString();
         }
-        public override void SetValue(object value) { }
         public override string Format(string keyName)
         { return ""; }
     }
@@ -136,7 +106,6 @@ namespace ConsoleMenu
         {
             return Value.ToString();
         }
-        public override void SetValue(object value) { }
         public override string Format(string keyName)
         { return ""; }
     }
@@ -166,7 +135,6 @@ namespace ConsoleMenu
         {
             return Value.ToString();
         }
-        public override void SetValue(object value) { }
         public override string Format(string keyName)
         { return ""; }
     }
@@ -192,7 +160,6 @@ namespace ConsoleMenu
         {
             return Value.ToString();
         }
-        public override void SetValue(object value) { }
         public override string Format(string keyName)
         { return ""; }
     }
@@ -224,7 +191,6 @@ namespace ConsoleMenu
                                     ? allcolors[Colors[ColorIndex]] 
                                     : "no color";
         }
-        public override void SetValue(object value){}
         public ConsoleColor GetColor()
         {
             return (ConsoleColor)Colors[ColorIndex];
@@ -235,7 +201,7 @@ namespace ConsoleMenu
             for (int i = 0; i < 16; i++) allColors[i] = i;
             return allColors;
         }
-        public static ColorOption ParseContent(string cnt)
+        public static ColorOption ParseFrom(string cnt)
         {
             return new ColorOption("", AllColors(), Convert.ToInt16(cnt));
         }
@@ -259,8 +225,8 @@ namespace ConsoleMenu
             if (array == null)
             { throw new ArgumentNullException("Array is null"); }
 
-            T[] list = array.ToArray();
-            int lstLen = list.Length;
+            T[] lst = array.ToArray();
+            int lstLen = lst.Length;
 
             if (lstLen == 0)
             { throw new ArgumentException("Array is empty"); }
@@ -274,7 +240,7 @@ namespace ConsoleMenu
                 int j = 0;
                 for (int k = start; k < end; k++)
                 {
-                    pages[i, j] = list[k];
+                    pages[i, j] = lst[k];
                     j++;
                 }
             }
@@ -371,7 +337,9 @@ namespace ConsoleMenu
                 }
             }
         }
-        public static void ShowSettings(Dictionary<string, SettingOption> settings, int selected, 
+    }
+    class Settings {
+        public static void ShowSettings(Dictionary<string, SettingOption> settings, int selected,
                                         (ConsoleColor, ConsoleColor) colors = default)
         {
             Console.WriteLine("\x1b[3J");
@@ -380,13 +348,13 @@ namespace ConsoleMenu
             ConsoleColor selectionColor = colors.Item2;
             string[] settingNames = settings.Keys.ToArray();
             ConsoleColor valueSelectedColor = ConsoleColor.White;
-            for(int i=0; i<settingNames.Length; i++)
+            for (int i = 0; i < settingNames.Length; i++)
             {
-                if(i==selected) Console.ForegroundColor = selectionColor;
+                if (i == selected) Console.ForegroundColor = selectionColor;
                 else Console.ForegroundColor = consoleColor;
-                Console.Write(settings[settingNames[i]].Name+": ");
-                if(i==selected) Console.ForegroundColor = valueSelectedColor;
-                Console.WriteLine("< "+settings[settingNames[i]].ToString()+" >");
+                Console.Write(settings[settingNames[i]].Name + ": ");
+                if (i == selected) Console.ForegroundColor = valueSelectedColor;
+                Console.WriteLine("< " + settings[settingNames[i]].ToString() + " >");
             }
 
         }

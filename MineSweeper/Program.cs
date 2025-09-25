@@ -418,11 +418,11 @@ namespace MineSweeper
                         ClearConsole();
                         break;
                     case "Promeniti tezinu":
-                        Menu.ChangeSettings(gameMode, menuColors);
+                        Settings.ChangeSettings(gameMode, menuColors);
                         ClearConsole();
                         break;
                     case "Podesavnja":
-                        Menu.ChangeSettings(settings, menuColors);
+                        Settings.ChangeSettings(settings, menuColors);
                         ClearConsole();
                         break;
                     case "Izlaz":
