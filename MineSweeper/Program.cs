@@ -404,7 +404,7 @@ namespace MineSweeper
             // nego u ASCII
             Console.OutputEncoding = System.Text.Encoding.UTF8;
 
-            const string VERSION = "0.1.1";
+            const string VERSION = "0.1.2";
 
             string settingsPath = "settings.txt";
 #pragma warning disable CS8602 // Dereference of a possibly null reference.
