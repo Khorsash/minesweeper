@@ -47,6 +47,15 @@ namespace MineSweeper
     }
     class Program
     {
+        static int ParseArgs(string[] args, string v)
+        {
+            if (args.Contains("--version") || args.Contains("-v"))
+            {
+                Console.WriteLine($"MineSweeper version {v}\nby Khorsash");
+                return 1;
+            }
+            return 0;
+        }
         static void SetBackground(ref Dictionary<string, SettingOption> settings)
         {
             Console.BackgroundColor = ((ColorOption)settings["backgroundcolor"]).GetColor();
@@ -398,7 +407,7 @@ namespace MineSweeper
                 }
             }
         }
-        static void Main(string[] args)
+        static int Main(string[] args)
         {
             // da bismo mogli izvesti "▓▓"
             // moramo da izvodimo u UTF8 formatu
@@ -406,6 +415,9 @@ namespace MineSweeper
             Console.OutputEncoding = System.Text.Encoding.UTF8;
 
             const string VERSION = "0.1.2";
+            int pa = ParseArgs(args, VERSION);
+            if (pa == 1) return 0;
+            if (pa == -1) return -1;
 
             string settingsPath = "settings.txt";
             string languagePackPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "translates.json");
@@ -503,6 +515,7 @@ namespace MineSweeper
             SaveSettings(settingsPath, settings);
             Console.BackgroundColor = defaultBackgrounColor;
             Console.ForegroundColor = defaultForegroundColor;
+            return 0;
         }
     }
 }
