@@ -1,8 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data.Common;
+using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using ConsoleMenu;
+using LanguageUtils;
 
 namespace MineSweeper
 {
@@ -45,6 +49,44 @@ namespace MineSweeper
     }
     class Program
     {
+        static void GameParameterSetup(ref Dictionary<string, SettingOption> gameMode,
+                                        ref Dictionary<string, (int, int)> sizes, 
+                                        ref Dictionary<string, int> bombCount)
+        {
+            sizes["9x9"] = (9, 9);
+            sizes["9x16"] = (16, 9);
+            sizes["16x16"] = (16, 16);
+            sizes["16x30"] = (30, 16);
+            sizes["30x16"] = (16, 30);
+            sizes["30x30"] = (30, 30);
+            bombCount["9x9"] = 9 * 9;
+            bombCount["9x16"] = 9 * 16;
+            bombCount["16x16"] = 16 * 16;
+            bombCount["16x30"] = 16 * 30;
+            bombCount["30x16"] = 16 * 30;
+            bombCount["30x30"] = 30 * 30;
+
+            // podesavanja tezine igrice
+            gameMode["size"] = new StringOption("", sizes.Keys.ToArray(), 1);
+            gameMode["difficulty"] = new IntRangeOption("", 1, 3, 1);
+        }
+        static string[] GetMenuOptions(ref Dictionary<string, Dictionary<string, string>> lngs,
+                                                                                    string clng)
+        {
+            return new string[4] {Languages.GetTranslate(ref lngs, clng, "newgame"),
+                                  Languages.GetTranslate(ref lngs, clng, "changedifficulty"),
+                                  Languages.GetTranslate(ref lngs, clng, "settings"),
+                                  Languages.GetTranslate(ref lngs, clng, "exit")};
+        }
+        static void GetSettingsTranslate(ref Dictionary<string, SettingOption> settings,
+                                          ref Dictionary<string, Dictionary<string, string>> lngs,
+                                                                                        string clng)
+        {
+            foreach (string key in settings.Keys.ToArray())
+            {
+                settings[key].Name = Languages.GetTranslate(ref lngs, clng, key);
+            }
+        }
         static Dictionary<string, SettingOption> LoadSettings(string settingsFilePath)
         {
             int[] allColors = new int[16];
@@ -64,14 +106,16 @@ namespace MineSweeper
             }
             File.WriteAllText(settingsFilePath, sttngsTxt.Substring(0, sttngsTxt.Length-1));
         }
-        static Dictionary<string, SettingOption> DefaultSettings()
+        static Dictionary<string, SettingOption> DefaultSettings(ref Dictionary<string, Dictionary<string, string>> lngs,
+                                                                                    string clng)
         {
             int[] allColors = ColorOption.AllColors();
             Dictionary<string, SettingOption> settings = new Dictionary<string, SettingOption>();
-            settings["gameselectcolor"] = new ColorOption("Boja izabrane celije", allColors, 10); // po default-u zeleni
-            settings["gameerrorcolor"] = new ColorOption("Boja pogresne celije", allColors, 12); // po default-u crveni
-            settings["baseforeground"] = new ColorOption("Boja teksta aplikacije", allColors, 7); // po default-u sivi
-            settings["menuselectcolor"] = new ColorOption("Boja izabranog elementa meni", allColors, 10); // po default-u zeleni
+            settings["gameselectcolor"] = new ColorOption("", allColors, 10); // po default-u zeleni
+            settings["gameerrorcolor"] = new ColorOption("", allColors, 12); // po default-u crveni
+            settings["baseforeground"] = new ColorOption("", allColors, 7); // po default-u sivi
+            settings["menuselectcolor"] = new ColorOption("", allColors, 10); // po default-u zeleni
+            settings["language"] = new StringOption("", lngs.Keys.ToArray(), Array.IndexOf(lngs.Keys.ToArray(), clng));
             return settings;
         }
         // koristim ANSI kod da bih izbrisao kes konsoli, 
@@ -83,9 +127,10 @@ namespace MineSweeper
             Console.WriteLine("\x1b[3J");
             Console.Clear();
         }
-        static void ExitMsg()
+        static void ExitMsg(ref Dictionary<string, Dictionary<string, string>> lngs,
+                                                                                    string clng)
         {
-            Console.WriteLine("(Pritisnite koje bilo dugme da biste izasli)");
+            Console.WriteLine(Languages.GetTranslate(ref lngs, clng, "exitmessage"));
             Console.ReadKey();
         }
         static Cell MtrxYXEl(ref Cell[,] mtrx, (int, int) coords)
@@ -151,7 +196,8 @@ namespace MineSweeper
         public static void DrawBoard(ref Cell[,] board, int x1, int y1,
                                 bool isGameOver,
                                 ConsoleColor defColor,
-                                (ConsoleColor, ConsoleColor) colors = default)
+                                (ConsoleColor, ConsoleColor) colors = default,
+                                string cellisopenedmsg = "")
         {
             ConsoleColor selColor = colors.Item1;
             ConsoleColor errColor = colors.Item2;
@@ -174,7 +220,7 @@ namespace MineSweeper
 
             DrawOpeningClosing(board.GetLength(1), false);
 
-            if (chosenCell.isOpened() && !isGameOver) Console.WriteLine("Celija je vec otvorena");
+            if (chosenCell.isOpened() && !isGameOver) Console.WriteLine(cellisopenedmsg);
         }
 
         static bool AreCoordsInside(ref Cell[,] board, (int, int) coords)
@@ -242,8 +288,9 @@ namespace MineSweeper
             }
             FloodFill(ref board, coords0);
         }
-        static void MineSweeperGame(int r = 16, int c = 9, int bc = 14, (ConsoleColor, ConsoleColor) colors = default)
-        { 
+        static void MineSweeperGame(ref Dictionary<string, Dictionary<string, string>> lngs, string clng,
+                                     int r = 16, int c = 9, int bc = 14, (ConsoleColor, ConsoleColor) colors = default)
+        {
             bool gameRunning = true;
             bool boardIsGenerated = false;
 
@@ -261,11 +308,12 @@ namespace MineSweeper
             while (gameRunning)
             {
                 ClearConsole();
-                DrawBoard(ref board, x, y, false, Console.ForegroundColor, colors);
+                DrawBoard(ref board, x, y, false, Console.ForegroundColor, colors,
+                            Languages.GetTranslate(ref lngs, clng, "cellalreadyopened"));
                 if (IsWin(ref board, bc))
                 {
-                    Console.WriteLine("Pobeda!");
-                    ExitMsg();
+                    Console.WriteLine(Languages.GetTranslate(ref lngs, clng, "win"));
+                    ExitMsg(ref lngs, clng);
                     break;
                 }
                 // provera korisnickog unosa
@@ -328,11 +376,14 @@ namespace MineSweeper
                                 gameRunning = false;
                                 ClearConsole();
                                 OpenBoard(ref board);
-                                DrawBoard(ref board, x, y, true, Console.ForegroundColor, colors);
+                                DrawBoard(ref board, x, y, true, Console.ForegroundColor, colors,
+                                            Languages.GetTranslate(ref lngs, clng, "cellalreadyopened"));
                                 Console.WriteLine("Game Over");
-                                Console.WriteLine("Vi ste uspesno nasli "+sfbc.ToString()+" bomba");
-                                Console.WriteLine("I promasili sa "+nab.ToString()+" bomba");
-                                ExitMsg();
+                                Console.WriteLine(Languages.GetTranslate(ref lngs, clng, "youfound") + sfbc.ToString() +
+                                                                            Languages.GetTranslate(ref lngs, clng, "bombs"));
+                                Console.WriteLine(Languages.GetTranslate(ref lngs, clng, "youmissed") + nab.ToString() +
+                                                                            Languages.GetTranslate(ref lngs, clng, "bombs"));
+                                ExitMsg(ref lngs, clng);
                             }
                             else
                             {
@@ -351,54 +402,55 @@ namespace MineSweeper
             // nego u ASCII
             Console.OutputEncoding = System.Text.Encoding.UTF8;
 
+            const string VERSION = "0.1.1";
+
+            string settingsPath = "settings.txt";
+#pragma warning disable CS8602 // Dereference of a possibly null reference.
+            string languagePackPath = Path.Combine(Directory.GetParent(Environment.CurrentDirectory).Parent.Parent.FullName, "translates.json");
+#pragma warning restore CS8602 // Dereference of a possibly null reference.
+
+            string currlng = Languages.defaultLanguage;
+
             (ConsoleColor, ConsoleColor) gameColors;
             (ConsoleColor, ConsoleColor) menuColors;
 
             // opcije meni
-            string[] menuOptions = new string[4] { "Nova igra", "Promeniti tezinu", "Podesavnja", "Izlaz" };
 
             // podesavanja tezine igrice
             Dictionary<string, SettingOption> gameMode = new Dictionary<string, SettingOption>();
             // podesavanja igrice
             Dictionary<string, SettingOption> settings;
-            string settingsPath = "settings.txt";
+            Dictionary<string, Dictionary<string, string>> dict = Languages.Load(languagePackPath);
+
+            string[] menuOptions = new string[4];
 
             // dimenzije polja
             Dictionary<string, (int, int)> sizes = new Dictionary<string, (int, int)>();
             // kolicina bomba na razliciti dimenzije polja
             Dictionary<string, int> bombCount = new Dictionary<string, int>();
 
+            try
+            {
+                settings = LoadSettings(settingsPath);
+                currlng = settings["language"].ToString() ?? currlng;
+            }
+            catch
+            {
+                settings = DefaultSettings(ref dict, currlng);
+                SaveSettings(settingsPath, settings);
+            }
+            
             // kontrolira balans
             // ako vece, onda manje bomba
             // ako manje, onda vise bomba
             int k = 9;
 
-            sizes["9x9"] = (9, 9);
-            sizes["9x16"] = (16, 9);
-            sizes["16x16"] = (16, 16);
-            sizes["16x30"] = (30, 16);
-            sizes["30x16"] = (16, 30);
-            sizes["30x30"] = (30, 30);
-            bombCount["9x9"] = 9 * 9;
-            bombCount["9x16"] = 9 * 16;
-            bombCount["16x16"] = 16 * 16;
-            bombCount["16x30"] = 16 * 30;
-            bombCount["30x16"] = 16 * 30;
-            bombCount["30x30"] = 30 * 30;
+            GameParameterSetup(ref gameMode, ref sizes, ref bombCount);
 
-            // podesavanja tezine igrice
-            gameMode["size"] = new StringOption("Dimenzije", sizes.Keys.ToArray(), 1);
-            gameMode["difficulty"] = new IntRangeOption("Tezina", 1, 3, 1);
+            menuOptions = GetMenuOptions(ref dict, currlng);
+            GetSettingsTranslate(ref settings, ref dict, currlng);
+            GetSettingsTranslate(ref gameMode, ref dict, currlng);
 
-            try
-            {
-                settings = LoadSettings(settingsPath);
-            }
-            catch
-            {
-                settings = DefaultSettings();
-                SaveSettings(settingsPath, settings);
-            }
 
             bool running = true;
             while (running)
@@ -407,25 +459,37 @@ namespace MineSweeper
                                 ((ColorOption)settings["menuselectcolor"]).GetColor());
                 gameColors = (((ColorOption)settings["gameselectcolor"]).GetColor(),
                                 ((ColorOption)settings["gameerrorcolor"]).GetColor());
-                string ch = Menu.MenuShow(Menu.Paginate(menuOptions, 4), 0, "Minesweeper 0.1", menuColors);
-                switch (ch)
+                string ch = Menu.MenuShow(Menu.Paginate(menuOptions, menuOptions.Length), 0, "Minesweeper "+VERSION, menuColors);
+                switch (Array.IndexOf(menuOptions, ch))
                 {
-                    case "Nova igra":
+                    // game
+                    case 0:
                         string dmns = gameMode["size"].ToString() ?? "9x16";
                         (int, int) size = sizes[dmns];
                         int bc = bombCount[dmns] / (k - ((IntRangeOption)gameMode["difficulty"]).Value);
-                        MineSweeperGame(size.Item1, size.Item2, bc, gameColors);
+                        MineSweeperGame(ref dict, currlng,
+                                            size.Item1, size.Item2, bc, gameColors);
                         ClearConsole();
                         break;
-                    case "Promeniti tezinu":
+                    // gameMode settings
+                    case 1:
                         Settings.ChangeSettings(gameMode, menuColors);
                         ClearConsole();
                         break;
-                    case "Podesavnja":
+                    // settings
+                    case 2:
                         Settings.ChangeSettings(settings, menuColors);
+                        if (settings["language"].ToString() != currlng)
+                        {
+                            currlng = settings["language"].ToString() ?? currlng;
+                            menuOptions = GetMenuOptions(ref dict, currlng);
+                            GetSettingsTranslate(ref settings, ref dict, currlng);
+                            GetSettingsTranslate(ref gameMode, ref dict, currlng);
+                        }
                         ClearConsole();
                         break;
-                    case "Izlaz":
+                    // exit
+                    case 3:
                         running = false;
                         ClearConsole();
                         break;

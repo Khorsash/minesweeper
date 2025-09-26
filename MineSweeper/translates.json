@@ -1,0 +1,62 @@
+{
+    "english":
+    {
+        "exitmessage":"(Press any key to exit)",
+        "gameselectcolor":"Color of selected cell",
+        "gameerrorcolor":"Color of opened selected cell",
+        "baseforeground":"App foreground",
+        "menuselectcolor":"Menu selected element foreground",
+        "cellalreadyopened":"Cell is already opened",
+        "win":"You won!",
+        "youfound":"You successfully found ",
+        "youmissed":"And missed ",
+        "bombs":" bombs",
+        "newgame":"New game",
+        "changedifficulty":"Change difficulty",
+        "settings":"Settings",
+        "exit":"Exit",
+        "size":"Size",
+        "difficulty":"Difficulty",
+        "language":"Language"
+    },
+    "srpski":
+    {
+        "exitmessage":"(Pritisnite koje bilo dugme da biste izasli)",
+        "gameselectcolor":"Boja izabrane celije",
+        "gameerrorcolor":"Boja pogresne celije",
+        "baseforeground":"Boja teksta aplikacije",
+        "menuselectcolor":"Boja izabranog elementa meni",
+        "cellalreadyopened":"Celija je vec otvorena",
+        "win":"Pobeda!",
+        "youfound":"Vi ste uspesno nasli ",
+        "youmissed":"I promasili sa ",
+        "bombs":" bomba",
+        "newgame":"Nova igra",
+        "changedifficulty":"Promeniti tezinu",
+        "settings":"Podesavnja",
+        "exit":"Izlaz",
+        "size":"Dimenzije",
+        "difficulty":"Tezina",
+        "language":"Jezik"
+    },
+    "русский":
+    {
+        "exitmessage":"(Нажмите на любую клавишу чтобы продолжить)",
+        "gameselectcolor":"Цвет выбранной клетки",
+        "gameerrorcolor":"Цвет открытой выбранной клетки",
+        "baseforeground":"Цвет шрифта приложения",
+        "menuselectcolor":"Цвет выбранного элемента меню",
+        "cellalreadyopened":"Клетка уже открыта",
+        "win":"Победа!",
+        "youfound":"Вы нашли ",
+        "youmissed":"И промахнулись с ",
+        "bombs":" бомб",
+        "newgame":"Новая игра",
+        "changedifficulty":"Изменить сложность",
+        "settings":"Настройки",
+        "exit":"Выйти",
+        "size":"Размер поля",
+        "difficulty":"Сложность",
+        "language":"Язык"
+    }
+}
