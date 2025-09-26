@@ -408,7 +408,7 @@ namespace MineSweeper
             const string VERSION = "0.1.2";
 
             string settingsPath = "settings.txt";
-            string languagePackPath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) ?? "", "translates.json");
+            string languagePackPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "translates.json");
 
 
             string currlng = Languages.defaultLanguage;
