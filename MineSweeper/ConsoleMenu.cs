@@ -283,7 +283,7 @@ namespace ConsoleMenu
         /// 
         /// </summary> 
         /// <returns>T of choice</returns>
-        public static T MenuShow<T>(T[,] pages, int pageIndex = 0, string title = "", 
+        public static T ShowMenu<T>(T[,] pages, int pageIndex = 0, string title = "", 
                                      (ConsoleColor, ConsoleColor) colors = default)
         {
             int pi = pageIndex;

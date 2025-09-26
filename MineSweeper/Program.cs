@@ -459,7 +459,7 @@ namespace MineSweeper
                                 ((ColorOption)settings["menuselectcolor"]).GetColor());
                 gameColors = (((ColorOption)settings["gameselectcolor"]).GetColor(),
                                 ((ColorOption)settings["gameerrorcolor"]).GetColor());
-                string ch = Menu.MenuShow(Menu.Paginate(menuOptions, menuOptions.Length), 0, "Minesweeper "+VERSION, menuColors);
+                string ch = Menu.ShowMenu(Menu.Paginate(menuOptions, menuOptions.Length), 0, "Minesweeper "+VERSION, menuColors);
                 switch (Array.IndexOf(menuOptions, ch))
                 {
                     // game
