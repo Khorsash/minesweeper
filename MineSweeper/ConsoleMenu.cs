@@ -354,9 +354,11 @@ namespace ConsoleMenu
                 else Console.ForegroundColor = consoleColor;
                 Console.Write(settings[settingNames[i]].Name + ": ");
                 if (i == selected) Console.ForegroundColor = valueSelectedColor;
+                if (settings[settingNames[i]].GetType() == typeof(ColorOption))
+                { Console.ForegroundColor = ((ColorOption)settings[settingNames[i]]).GetColor(); }
                 Console.WriteLine("< " + settings[settingNames[i]].ToString() + " >");
             }
-
+            Console.ForegroundColor = consoleColor;
         }
         public static void ChangeSettings(Dictionary<string, SettingOption> settings, 
                                            (ConsoleColor, ConsoleColor) colors = default)
