@@ -312,12 +312,12 @@ namespace ConsoleMenu
                         if (pi > 0)
                         {pi--;}
                         else
-                        {pi = pages.Length - 1;}
+                        {pi = pages.GetLength(0) - 1;}
                         ShowPage(GetRow(ref pages, pi), title, 0, colors);
                         ei = 0;
                         break;
                     case ConsoleKey.RightArrow:
-                        if (pi < pages.Length - 1)
+                        if (pi < pages.GetLength(0) - 1)
                         {pi++;}
                         else
                         {pi = 0;}
