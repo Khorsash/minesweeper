@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <AssemblyTitle>MineSweeper</AssemblyTitle>
+    <AssemblyTitle>minesweeper</AssemblyTitle>
     <Description>This is my test .NET application</Description>
     <Company>LOH prodaksn</Company>
     <Product>MineSweeper</Product>
