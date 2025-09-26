@@ -43,6 +43,24 @@ namespace MineSweeper
     }
     class Program
     {
+        static int[] ParseConsoleArgs(string[] args)
+        {
+            int[] values = new int[3] { 16, 9, 14 };
+            int i = 0;
+            int temp;
+            if (args.Length > 0)
+            {
+                foreach (string el in args)
+                {
+                    if (int.TryParse(el, out temp))
+                    {
+                        values[i] = temp;
+                        i++;
+                    }
+                }
+            }
+            return values;
+        }
         static void ClearConsole()
         {
             Console.WriteLine("\x1b[3J");
@@ -290,7 +308,8 @@ namespace MineSweeper
         static void Main(string[] args)
         {
             Console.OutputEncoding = System.Text.Encoding.UTF8;
-            MineSweeperGame(16, 9, 14);
+            int[] values = ParseConsoleArgs(args);
+            MineSweeperGame(values[0], values[1], values[2]);
         }
     }
 }
