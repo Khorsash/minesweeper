@@ -1,10 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Data.Common;
-using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using ConsoleMenu;
 using LanguageUtils;
 
@@ -49,8 +46,12 @@ namespace MineSweeper
     }
     class Program
     {
+        static void SetBackground(ref Dictionary<string, SettingOption> settings)
+        {
+            Console.BackgroundColor = ((ColorOption)settings["backgroundcolor"]).GetColor();
+        }
         static void GameParameterSetup(ref Dictionary<string, SettingOption> gameMode,
-                                        ref Dictionary<string, (int, int)> sizes, 
+                                        ref Dictionary<string, (int, int)> sizes,
                                         ref Dictionary<string, int> bombCount)
         {
             sizes["9x9"] = (9, 9);
@@ -115,6 +116,7 @@ namespace MineSweeper
             settings["gameerrorcolor"] = new ColorOption("", allColors, 12); // po default-u crveni
             settings["baseforeground"] = new ColorOption("", allColors, 7); // po default-u sivi
             settings["menuselectcolor"] = new ColorOption("", allColors, 10); // po default-u zeleni
+            settings["backgroundcolor"] = new ColorOption("", allColors, 0); // po default-u crni
             settings["language"] = new StringOption("", lngs.Keys.ToArray(), Array.IndexOf(lngs.Keys.ToArray(), clng));
             return settings;
         }
@@ -413,6 +415,8 @@ namespace MineSweeper
 
             (ConsoleColor, ConsoleColor) gameColors;
             (ConsoleColor, ConsoleColor) menuColors;
+            ConsoleColor defaultBackgrounColor = Console.BackgroundColor;
+            ConsoleColor defaultForegroundColor = Console.ForegroundColor;
 
             // opcije meni
 
@@ -439,7 +443,7 @@ namespace MineSweeper
                 settings = DefaultSettings(ref dict, currlng);
                 SaveSettings(settingsPath, settings);
             }
-            
+
             // kontrolira balans
             // ako vece, onda manje bomba
             // ako manje, onda vise bomba
@@ -459,7 +463,7 @@ namespace MineSweeper
                                 ((ColorOption)settings["menuselectcolor"]).GetColor());
                 gameColors = (((ColorOption)settings["gameselectcolor"]).GetColor(),
                                 ((ColorOption)settings["gameerrorcolor"]).GetColor());
-                string ch = Menu.ShowMenu(Menu.Paginate(menuOptions, menuOptions.Length), 0, "Minesweeper "+VERSION, menuColors);
+                string ch = Menu.ShowMenu(Menu.Paginate(menuOptions, menuOptions.Length), 0, "Minesweeper " + VERSION, menuColors);
                 switch (Array.IndexOf(menuOptions, ch))
                 {
                     // game
@@ -486,6 +490,7 @@ namespace MineSweeper
                             GetSettingsTranslate(ref settings, ref dict, currlng);
                             GetSettingsTranslate(ref gameMode, ref dict, currlng);
                         }
+                        SetBackground(ref settings);
                         ClearConsole();
                         break;
                     // exit
@@ -496,6 +501,8 @@ namespace MineSweeper
                 }
             }
             SaveSettings(settingsPath, settings);
+            Console.BackgroundColor = defaultBackgrounColor;
+            Console.ForegroundColor = defaultForegroundColor;
         }
     }
 }

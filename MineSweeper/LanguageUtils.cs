@@ -18,8 +18,9 @@ namespace LanguageUtils
         public static string GetTranslate(ref Dictionary<string, Dictionary<string, string>> lngs,
                                                                                         string currlng, string txt)
         {
-            if (!lngs.ContainsKey(currlng) && !lngs[defaultLanguage].ContainsKey(txt)) return txt;
-            if (!lngs.ContainsKey(currlng)) return lngs[defaultLanguage][txt];
+            if (!lngs[defaultLanguage].ContainsKey(txt)) return txt;
+            if (!lngs.ContainsKey(currlng) ||
+                    (lngs[defaultLanguage].ContainsKey(txt) && !lngs[currlng].ContainsKey(txt))) return lngs[defaultLanguage][txt];
             return lngs[currlng][txt];
         }
     }
