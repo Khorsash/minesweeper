@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using ConsoleMenu;
 using LanguageUtils;
 
@@ -407,7 +408,7 @@ namespace MineSweeper
             const string VERSION = "0.1.2";
 
             string settingsPath = "settings.txt";
-            string languagePackPath = "translates.json";
+            string languagePackPath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) ?? "", "translates.json");
 
 
             string currlng = Languages.defaultLanguage;
