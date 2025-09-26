@@ -407,9 +407,8 @@ namespace MineSweeper
             const string VERSION = "0.1.2";
 
             string settingsPath = "settings.txt";
-#pragma warning disable CS8602 // Dereference of a possibly null reference.
-            string languagePackPath = Path.Combine(Directory.GetParent(Environment.CurrentDirectory).Parent.Parent.FullName, "translates.json");
-#pragma warning restore CS8602 // Dereference of a possibly null reference.
+            string languagePackPath = "translates.json";
+
 
             string currlng = Languages.defaultLanguage;
 
