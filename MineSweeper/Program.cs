@@ -2,12 +2,80 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using ConsoleMenu;
 using LanguageUtils;
 
 namespace MineSweeper
 {
+    class Translates
+    {
+        public static Dictionary<string, Dictionary<string, string>> defaultLanguages = new Dictionary<string, Dictionary<string, string>>
+        {
+            ["english"] = new Dictionary<string, string>
+            {
+                ["exitmessage"] = "(Press any key to exit)",
+                ["gameselectcolor"] = "Color of selected cell",
+                ["gameerrorcolor"] = "Color of opened selected cell",
+                ["baseforeground"] = "App foreground",
+                ["backgroundcolor"] = "Background color",
+                ["menuselectcolor"] = "Menu selected element foreground",
+                ["cellalreadyopened"] = "Cell is already opened",
+                ["win"] = "You won!",
+                ["youfound"] = "You successfully found ",
+                ["youmissed"] = "And missed ",
+                ["bombs"] = " bombs",
+                ["newgame"] = "New game",
+                ["changedifficulty"] = "Change difficulty",
+                ["settings"] = "Settings",
+                ["exit"] = "Exit",
+                ["size"] = "Size",
+                ["difficulty"] = "Difficulty",
+                ["language"] = "Language"
+            },
+            ["srpski"] = new Dictionary<string, string>
+            {
+                ["exitmessage"] = "(Pritisnite koje bilo dugme da biste izasli)",
+                ["gameselectcolor"] = "Boja izabrane celije",
+                ["gameerrorcolor"] = "Boja pogresne celije",
+                ["baseforeground"] = "Boja teksta aplikacije",
+                ["backgroundcolor"] = "Boja pozadine",
+                ["menuselectcolor"] = "Boja izabranog elementa meni",
+                ["cellalreadyopened"] = "Celija je vec otvorena",
+                ["win"] = "Pobeda!",
+                ["youfound"] = "Vi ste uspesno nasli ",
+                ["youmissed"] = "I promasili sa ",
+                ["bombs"] = " bomba",
+                ["newgame"] = "Nova igra",
+                ["changedifficulty"] = "Promeniti tezinu",
+                ["settings"] = "Podesavnja",
+                ["exit"] = "Izlaz",
+                ["size"] = "Dimenzije",
+                ["difficulty"] = "Tezina",
+                ["language"] = "Jezik"
+            },
+            ["русский"] = new Dictionary<string, string>
+            {
+                ["exitmessage"] = "(Нажмите на любую клавишу чтобы продолжить)",
+                ["gameselectcolor"] = "Цвет выбранной клетки",
+                ["gameerrorcolor"] = "Цвет открытой выбранной клетки",
+                ["baseforeground"] = "Цвет шрифта приложения",
+                ["backgroundcolor"] = "Цвет фона",
+                ["menuselectcolor"] = "Цвет выбранного элемента меню",
+                ["cellalreadyopened"] = "Клетка уже открыта",
+                ["win"] = "Победа!",
+                ["youfound"] = "Вы нашли ",
+                ["youmissed"] = "И промахнулись с ",
+                ["bombs"] = " бомб",
+                ["newgame"] = "Новая игра",
+                ["changedifficulty"] = "Изменить сложность",
+                ["settings"] = "Настройки",
+                ["exit"] = "Выйти",
+                ["size"] = "Размер поля",
+                ["difficulty"] = "Сложность",
+                ["language"] = "Язык"
+            }
+        };
+    }
     struct Cell
     {
         // ako value == -1 -> bomba
@@ -29,7 +97,7 @@ namespace MineSweeper
         {
             return isGameOver && isBomb() ? errColor : isSelected ? (opened || flagged ? errColor : selColor) : defColor;
         }
-        public void Open() { opened = true; } 
+        public void Open() { opened = true; }
         public void PlantBomb() { value = -1; }
         public void ChangeFlagState()
         {
@@ -47,6 +115,19 @@ namespace MineSweeper
     }
     class Program
     {
+        static string AppDataDir()
+        {
+            string appDataRoamingPath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+            string appDataDirPath = Path.Combine(appDataRoamingPath, "minesweeper");
+            if (!Path.Exists(appDataDirPath)) Directory.CreateDirectory(appDataDirPath);
+            return appDataDirPath;
+        }
+        static string TranslatesJsonPath(string appDataDirPath)
+        {
+            string pth = Path.Combine(appDataDirPath, "translates.json");
+            if (!Path.Exists(pth)) Languages.WriteTranslates(Translates.defaultLanguages, pth);
+            return pth;
+        }
         static int ParseArgs(string[] args, string v)
         {
             if (args.Contains("--version") || args.Contains("-v"))
@@ -413,14 +494,15 @@ namespace MineSweeper
             // moramo da izvodimo u UTF8 formatu
             // nego u ASCII
             Console.OutputEncoding = System.Text.Encoding.UTF8;
-
+            
             const string VERSION = "0.1.2";
             int pa = ParseArgs(args, VERSION);
             if (pa == 1) return 0;
             if (pa == -1) return -1;
 
-            string settingsPath = "settings.txt";
-            string languagePackPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "translates.json");
+            string appDataDirPath = AppDataDir();
+            string settingsPath = Path.Combine(appDataDirPath, "settings.txt");
+            string languagePackPath = TranslatesJsonPath(appDataDirPath);
 
 
             string currlng = Languages.defaultLanguage;

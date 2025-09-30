@@ -43,6 +43,7 @@ namespace ConsoleMenu
         }
         public override void PreviousValue()
         {
+            if (Options.Length == 1) { ValueIndex = 0; return; }
             ValueIndex = ValueIndex == 0 ? Options.Length - 1 : ValueIndex - 1;
         }
         public override string ToString()

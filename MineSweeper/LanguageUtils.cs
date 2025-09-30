@@ -23,5 +23,10 @@ namespace LanguageUtils
                     (lngs[defaultLanguage].ContainsKey(txt) && !lngs[currlng].ContainsKey(txt))) return lngs[defaultLanguage][txt];
             return lngs[currlng][txt];
         }
+        public static void WriteTranslates(Dictionary<string, Dictionary<string, string>> dt,
+                                                    string languagePackPath)
+        {
+            File.WriteAllText(languagePackPath, JsonSerializer.Serialize(dt), System.Text.Encoding.UTF8);
+        }
     }
 }

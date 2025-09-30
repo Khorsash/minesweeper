@@ -4,4 +4,4 @@
 
 <h1> 0.1.2 </h1>
 
-- added ConsoleMenu for game menu, settings for customization in <code>ConsoleMenu.cs</code>, added <code>LanguageUtils</code> and translates.json for translations for other languages
+- added ConsoleMenu for game menu, settings for customization in <code>ConsoleMenu.cs</code>, added <code>LanguageUtils.cs</code> and translates.json for translations for other languages
