@@ -248,12 +248,15 @@ namespace ConsoleMenu
             return pages;
         }
         private static void ShowPage<T>(T[] page, string title = "", int selectIndex = 0,
-                                         (ConsoleColor, ConsoleColor) colors = default)
+                                         (ConsoleColor, ConsoleColor) colors = default,
+                                         (string,  string) prfxs = default)
         {
             Console.WriteLine("\x1b[3J");
             Console.Clear();
             ConsoleColor consoleColor = colors.Item1;
             ConsoleColor selectionColor = colors.Item2;
+            string selPr = prfxs.Item1 ?? "> ";
+            string empPr = prfxs.Item2 ?? "  ";
             int YOffset = title != "" ? title.Split("\n").Length : 0;
             if (title != "") Console.WriteLine(title);
             for (int i=0; i<page.Length; i++)
@@ -261,15 +264,15 @@ namespace ConsoleMenu
                 if (i == selectIndex)
                 {
                     Console.ForegroundColor = selectionColor;
-                    Console.WriteLine("> " + Convert.ToString(page[i]));
+                    Console.WriteLine(selPr + Convert.ToString(page[i]));
                     Console.ForegroundColor = consoleColor;
                     continue;
                 }
-                Console.WriteLine("  " + Convert.ToString(page[i]));
+                Console.WriteLine(empPr + Convert.ToString(page[i]));
             }
             Console.ForegroundColor = consoleColor;
 #pragma warning disable CS8602 // Dereference of a possibly null reference.
-            Console.SetCursorPosition(Convert.ToString(page[selectIndex]).Length + 2, selectIndex+YOffset);
+            Console.SetCursorPosition(Convert.ToString(page[selectIndex]).Length + selPr.Length, selectIndex+YOffset);
 #pragma warning restore CS8602 // Dereference of a possibly null reference.
         }
         /// <summary>
@@ -285,11 +288,12 @@ namespace ConsoleMenu
         /// </summary> 
         /// <returns>T of choice</returns>
         public static T ShowMenu<T>(T[,] pages, int pageIndex = 0, string title = "", 
-                                     (ConsoleColor, ConsoleColor) colors = default)
+                                     (ConsoleColor, ConsoleColor) colors = default,
+                                     (string,  string) prfxs = default)
         {
             int pi = pageIndex;
             int ei = 0;
-            ShowPage(GetRow(ref pages, pi), title, 0, colors);
+            ShowPage(GetRow(ref pages, pi), title, 0, colors, prfxs);
             while (true)
             {
                 ConsoleKeyInfo key = Console.ReadKey();
@@ -300,21 +304,21 @@ namespace ConsoleMenu
                         {ei--;}
                         else
                         {ei = pages.GetLength(1) - 1;}
-                        ShowPage(GetRow(ref pages, pi), title, ei, colors);
+                        ShowPage(GetRow(ref pages, pi), title, ei, colors, prfxs);
                         break;
                     case ConsoleKey.DownArrow:
                         if (ei < pages.GetLength(1) - 1)
                         {ei++;}
                         else
                         {ei = 0;}
-                        ShowPage(GetRow(ref pages, pi), title, ei, colors);
+                        ShowPage(GetRow(ref pages, pi), title, ei, colors, prfxs);
                         break;
                     case ConsoleKey.LeftArrow:
                         if (pi > 0)
                         {pi--;}
                         else
                         {pi = pages.GetLength(0) - 1;}
-                        ShowPage(GetRow(ref pages, pi), title, 0, colors);
+                        ShowPage(GetRow(ref pages, pi), title, 0, colors, prfxs);
                         ei = 0;
                         break;
                     case ConsoleKey.RightArrow:
@@ -322,7 +326,7 @@ namespace ConsoleMenu
                         {pi++;}
                         else
                         {pi = 0;}
-                        ShowPage(GetRow(ref pages, pi), title, 0, colors);
+                        ShowPage(GetRow(ref pages, pi), title, 0, colors, prfxs);
                         ei = 0;
                         break;
                     case ConsoleKey.Enter:
