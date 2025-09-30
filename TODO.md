@@ -1,0 +1,1 @@
+- test it on Linux/Mac os and fix (if needs fix) <code>translates.json</code> and <code>settings.txt</code> saving directory

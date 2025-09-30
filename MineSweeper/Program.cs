@@ -495,7 +495,7 @@ namespace MineSweeper
             // nego u ASCII
             Console.OutputEncoding = System.Text.Encoding.UTF8;
             
-            const string VERSION = "0.1.2";
+            const string VERSION = "0.1.3";
             int pa = ParseArgs(args, VERSION);
             if (pa == 1) return 0;
             if (pa == -1) return -1;
