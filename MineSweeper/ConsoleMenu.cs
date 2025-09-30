@@ -247,7 +247,7 @@ namespace ConsoleMenu
             }
             return pages;
         }
-        private static void ShowPage<T>(T[] page, string title = "", int startIndex = 0,
+        private static void ShowPage<T>(T[] page, string title = "", int selectIndex = 0,
                                          (ConsoleColor, ConsoleColor) colors = default)
         {
             Console.WriteLine("\x1b[3J");
@@ -258,7 +258,7 @@ namespace ConsoleMenu
             if (title != "") Console.WriteLine(title);
             for (int i=0; i<page.Length; i++)
             {
-                if (i == startIndex)
+                if (i == selectIndex)
                 {
                     Console.ForegroundColor = selectionColor;
                     Console.WriteLine("> " + Convert.ToString(page[i]));
@@ -269,7 +269,7 @@ namespace ConsoleMenu
             }
             Console.ForegroundColor = consoleColor;
 #pragma warning disable CS8602 // Dereference of a possibly null reference.
-            Console.SetCursorPosition(Convert.ToString(page[startIndex]).Length + 2, startIndex+YOffset);
+            Console.SetCursorPosition(Convert.ToString(page[selectIndex]).Length + 2, selectIndex+YOffset);
 #pragma warning restore CS8602 // Dereference of a possibly null reference.
         }
         /// <summary>
