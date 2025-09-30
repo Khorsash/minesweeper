@@ -271,9 +271,8 @@ namespace ConsoleMenu
                 Console.WriteLine(empPr + Convert.ToString(page[i]));
             }
             Console.ForegroundColor = consoleColor;
-#pragma warning disable CS8602 // Dereference of a possibly null reference.
-            Console.SetCursorPosition(Convert.ToString(page[selectIndex]).Length + selPr.Length, selectIndex+YOffset);
-#pragma warning restore CS8602 // Dereference of a possibly null reference.
+            string selectedEl = Convert.ToString(page[selectIndex]) ?? "";
+            Console.SetCursorPosition(selectedEl.Length + selPr.Length, selectIndex+YOffset);
         }
         /// <summary>
         ///     Shows menu in console with paginated options<br/><br/>
