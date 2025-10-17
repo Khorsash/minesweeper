@@ -9,3 +9,5 @@
 <h1> 0.1.3 </h1>
 
 - added <code>WriteTranslates</code>, <code>Translates.defaultLanguages</code> to write default translates, keeping possibility to change translates and add another language in <code>translates.json</code>, and from now <code>translates.json</code> and <code>settings.txt</code> are in <code>AppData/Roaming</code> for windows(i haven't actually testing for linux/mac os, so check out <code>TODO.md</code>)
+
+- added color fill for bomb count
