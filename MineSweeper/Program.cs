@@ -158,7 +158,12 @@ namespace MineSweeper
             {
                 sttngsTxt += settings[k].Format(k) + ";";
             }
-            File.WriteAllText(settingsFilePath, sttngsTxt.Substring(0, sttngsTxt.Length-1));
+            File.WriteAllText(settingsFilePath, sttngsTxt.Substring(0, sttngsTxt.Length - 1));
+        }
+        static void AddDebugSettings(ref Dictionary<string, SettingOption> sttngs)
+        {
+            sttngs["balans-coefficient"] = new IntRangeOption("", 2, 21);
+
         }
         static Dictionary<string, SettingOption> DefaultSettings(ref Dictionary<string, Dictionary<string, string>> lngs,
                                                                                     string clng)
@@ -171,6 +176,7 @@ namespace MineSweeper
             settings["menuselectcolor"] = new ColorOption("", allColors, 10); // po default-u zeleni
             settings["backgroundcolor"] = new ColorOption("", allColors, 0); // po default-u crni
             settings["language"] = new StringOption("", lngs.Keys.ToArray(), Array.IndexOf(lngs.Keys.ToArray(), clng));
+            settings["dev-mode"] = new BoolOption("", false);
             return settings;
         }
         // koristim ANSI kod da bih izbrisao kes konsoli, 
@@ -305,11 +311,14 @@ namespace MineSweeper
         }
         public static void FloodFill(ref Cell[,] board, (int, int) coords)
         {
-            int y0 = coords.Item1;
-            int x0 = coords.Item2;
             if (!AreCoordsInside(ref board, coords)) return;
-            (int, int)[] coordsToCheck = new (int, int)[4] { (y0 - 1, x0), (y0, x0 - 1), (y0 + 1, x0), (y0, x0 + 1) };
-            for (int i = 0; i < 4; i++)
+            if (MtrxYXEl(ref board, coords).value > 0)
+            {
+                board[coords.Item1, coords.Item2].Open();
+                return;
+            }
+            List<(int, int)> coordsToCheck = NearCoordsRectangle(ref board, coords, 1);
+            for (int i = 0; i < coordsToCheck.Count; i++)
             {
                 if (!AreCoordsInside(ref board, coordsToCheck[i])) continue;
                 Cell cell = MtrxYXEl(ref board, coordsToCheck[i]);

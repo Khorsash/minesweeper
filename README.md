@@ -11,14 +11,18 @@ In the game, mines (that resemble naval mines in the classic theme) are scattere
 <img width="1100" height="598" alt="image" src="https://github.com/user-attachments/assets/ec555149-8435-4186-9007-d6c682b8f988" />
 <h4>Navigation</h4>
 <img width="1100" height="594" alt="image" src="https://github.com/user-attachments/assets/31ee5adb-e5ef-4de2-ac32-36d922aedff8" />
+
 - You can navigate with WASD keys or Arrow keys, open with Enter key
+
 <h4>Flagging</h4>
 <img width="1100" height="593" alt="image" src="https://github.com/user-attachments/assets/4f28ffb2-bfea-4a67-b676-3574fa1b0df8" />
+
 - You can flag and unflag square with F key
+
 <img width="1100" height="590" alt="image" src="https://github.com/user-attachments/assets/6a4c837d-8b74-44c9-a7f9-0a6d4c140099" />
+
 - Game over
 
-<br/>
 <br/>
 <h2>Menu screenshots</h2>
 <h3>Main menu</h3>
