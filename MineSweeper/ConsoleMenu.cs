@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
+using System.Numerics;
 
 namespace ConsoleMenu
 {
@@ -65,7 +67,7 @@ namespace ConsoleMenu
     }
     public class BoolOption : SettingOption
     {
-        private bool Value;
+        public bool Value;
         public BoolOption(string nm, bool value) : base(nm)
         {
             Value = value;
@@ -124,6 +126,10 @@ namespace ConsoleMenu
             Start = start;
             End = end;
         }
+        public void SetValue(int v)
+        {
+            if (v >= Start && v <= End && (v - Start) % Step == 0) Value = v;
+        }
         public override void NextValue()
         {
             Value = Value == End ? Start : Value + Step;
@@ -141,7 +147,7 @@ namespace ConsoleMenu
     }
     public class DoubleOption : SettingOption
     {
-        private double Value;
+        public double Value;
         private double Step;
 
         public DoubleOption(string nm, double value, double step) : base(nm)

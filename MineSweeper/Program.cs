@@ -141,6 +141,33 @@ namespace MineSweeper
                 settings[key].Name = Languages.GetTranslate(ref lngs, clng, key);
             }
         }
+        static string UserSettingsSetup(out Dictionary<string, SettingOption> settings,
+                                        out Dictionary<string, Dictionary<string, string>> dict,
+                                        out string currlng)
+        {
+            string appDataDirPath = AppDataDir();
+            string settingsPath = Path.Combine(appDataDirPath, "settings.txt");
+            string languagePackPath = TranslatesJsonPath(appDataDirPath);
+
+            currlng = Languages.defaultLanguage;
+            dict = Languages.Load(languagePackPath);
+
+
+            try
+            {
+                settings = LoadSettings(settingsPath);
+                currlng = settings["language"].ToString() ?? currlng;
+            }
+            catch
+            {
+                settings = DefaultSettings(ref dict, currlng);
+                SaveSettings(settingsPath, settings);
+            }
+
+            GetSettingsTranslate(ref settings, ref dict, currlng);
+
+            return settingsPath;
+        }
         static Dictionary<string, SettingOption> LoadSettings(string settingsFilePath)
         {
             int[] allColors = new int[16];
@@ -160,10 +187,22 @@ namespace MineSweeper
             }
             File.WriteAllText(settingsFilePath, sttngsTxt.Substring(0, sttngsTxt.Length - 1));
         }
-        static void AddDebugSettings(ref Dictionary<string, SettingOption> sttngs)
+        static void CheckDevSettings(ref Dictionary<string, SettingOption> sttngs, int k)
         {
-            sttngs["balans-coefficient"] = new IntRangeOption("", 2, 21);
-
+            if (!((BoolOption)sttngs["dev-mode"]).Value)
+            {
+                if (sttngs.ContainsKey("balance-coefficient")) sttngs.Remove("balance-coefficient");
+                if (sttngs.ContainsKey("startzone-for-easy")) sttngs.Remove("startzone-for-easy");
+                return;
+            }
+            sttngs["balance-coefficient"] = new IntRangeOption("", 2, 21);
+            ((IntRangeOption)sttngs["balance-coefficient"]).SetValue(k);
+            sttngs["startzone-for-easy"] = new BoolOption("", false);
+        }
+        static void UpdateDevSetting(ref Dictionary<string, SettingOption> sttngs, ref int k)
+        {
+            if (((BoolOption)sttngs["dev-mode"]).Value) 
+                k = ((IntRangeOption)sttngs["balance-coefficient"]).Value;
         }
         static Dictionary<string, SettingOption> DefaultSettings(ref Dictionary<string, Dictionary<string, string>> lngs,
                                                                                     string clng)
@@ -353,7 +392,8 @@ namespace MineSweeper
             FloodFill(ref board, coords0);
         }
         static void MineSweeperGame(ref Dictionary<string, Dictionary<string, string>> lngs, string clng,
-                                     int r = 16, int c = 9, int bc = 14, (ConsoleColor, ConsoleColor) colors = default)
+                                     int r = 16, int c = 9, int bc = 14, (ConsoleColor, ConsoleColor) colors = default,
+                                     bool addStartZone = false)
         {
             bool gameRunning = true;
             bool boardIsGenerated = false;
@@ -459,65 +499,38 @@ namespace MineSweeper
                 }
             }
         }
-        static int Main(string[] args)
+        static void MainLoop(ref Dictionary<string, SettingOption> settings,
+                                ref Dictionary<string, Dictionary<string, string>> dict,
+                                ref string currlng,
+                                string VERSION
+                                )
         {
-            // da bismo mogli izvesti "▓▓"
-            // moramo da izvodimo u UTF8 formatu
-            // nego u ASCII
-            Console.OutputEncoding = System.Text.Encoding.UTF8;
-            
-            const string VERSION = "0.1.3";
-            int pa = ParseArgs(args, VERSION);
-            if (pa == 1) return 0;
-            if (pa == -1) return -1;
-
-            string appDataDirPath = AppDataDir();
-            string settingsPath = Path.Combine(appDataDirPath, "settings.txt");
-            string languagePackPath = TranslatesJsonPath(appDataDirPath);
-
-            string currlng = Languages.defaultLanguage;
 
             (ConsoleColor, ConsoleColor) gameColors;
             (ConsoleColor, ConsoleColor) menuColors;
             ConsoleColor defaultBackgrounColor = Console.BackgroundColor;
             ConsoleColor defaultForegroundColor = Console.ForegroundColor;
 
-            // opcije meni
-
-            // podesavanja tezine igrice
-            Dictionary<string, SettingOption> gameMode = new Dictionary<string, SettingOption>();
-            // podesavanja igrice
-            Dictionary<string, SettingOption> settings;
-            Dictionary<string, Dictionary<string, string>> dict = Languages.Load(languagePackPath);
-
-            string[] menuOptions = new string[4];
+            string[] menuOptions = GetMenuOptions(ref dict, currlng);
 
             // dimenzije polja
             Dictionary<string, (int, int)> sizes = new Dictionary<string, (int, int)>();
             // kolicina bomba na razliciti dimenzije polja
             Dictionary<string, int> bombCount = new Dictionary<string, int>();
 
-            try
-            {
-                settings = LoadSettings(settingsPath);
-                currlng = settings["language"].ToString() ?? currlng;
-            }
-            catch
-            {
-                settings = DefaultSettings(ref dict, currlng);
-                SaveSettings(settingsPath, settings);
-            }
+            Dictionary<string, SettingOption> gameMode = new Dictionary<string, SettingOption>();
+
+            GameParameterSetup(ref gameMode, ref sizes, ref bombCount);
+            GetSettingsTranslate(ref gameMode, ref dict, currlng);
 
             // kontrolira balans
             // ako vece, onda manje bomba
             // ako manje, onda vise bomba
             int k = 6;
 
-            GameParameterSetup(ref gameMode, ref sizes, ref bombCount);
-
-            menuOptions = GetMenuOptions(ref dict, currlng);
-            GetSettingsTranslate(ref settings, ref dict, currlng);
-            GetSettingsTranslate(ref gameMode, ref dict, currlng);
+            bool addStartZone = settings.ContainsKey("startzone-for-easy") 
+                                    ? ((BoolOption)settings["startzone-for-easy"]).Value 
+                                    : false;
 
 
             bool running = true;
@@ -536,13 +549,16 @@ namespace MineSweeper
                         (int, int) size = sizes[dmns];
                         int bc = bombCount[dmns] / (k - ((IntRangeOption)gameMode["difficulty"]).Value);
                         MineSweeperGame(ref dict, currlng,
-                                            size.Item1, size.Item2, bc, gameColors);
+                                            size.Item1, size.Item2, bc, gameColors,
+                                            addStartZone);
                         ClearConsole();
                         break;
                     // gameMode settings
                     case 1:
                         Settings.ChangeSettings(gameMode, menuColors);
                         ClearConsole();
+                        CheckDevSettings(ref settings, k);
+                        UpdateDevSetting(ref settings, ref k);
                         break;
                     // settings
                     case 2:
@@ -564,9 +580,29 @@ namespace MineSweeper
                         break;
                 }
             }
-            SaveSettings(settingsPath, settings);
             Console.BackgroundColor = defaultBackgrounColor;
             Console.ForegroundColor = defaultForegroundColor;
+        }
+        static int Main(string[] args)
+        {
+            // da bismo mogli izvesti "▓▓"
+            // moramo da izvodimo u UTF8 formatu
+            // nego u ASCII
+            Console.OutputEncoding = System.Text.Encoding.UTF8;
+            
+            const string VERSION = "0.1.3";
+            int pa = ParseArgs(args, VERSION);
+            if (pa == 1) return 0;
+            if (pa == -1) return -1;
+
+            // podesavanja igrice
+            Dictionary<string, SettingOption> settings;
+            Dictionary<string, Dictionary<string, string>> dict;
+            string currlang;
+
+            string settingsPath = UserSettingsSetup(out settings, out dict, out currlang);
+            MainLoop(ref settings, ref dict, ref currlang, VERSION);
+            SaveSettings(settingsPath, settings);
             return 0;
         }
     }
