@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using ConsoleMenu;
 using LanguageUtils;
 
@@ -106,6 +107,7 @@ namespace MineSweeper
         }
         static void SetBackground(ref Dictionary<string, SettingOption> settings)
         {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) return;
             Console.BackgroundColor = ((ColorOption)settings["backgroundcolor"]).GetColor();
         }
         static void GameParameterSetup(ref Dictionary<string, SettingOption> gameMode,
@@ -229,7 +231,8 @@ namespace MineSweeper
             settings["gameflagselectcolor"] = new ColorOption("", allColors, 5); // po default-u magenta
             settings["baseforeground"] = new ColorOption("", allColors, 7); // po default-u sivi
             settings["menuselectcolor"] = new ColorOption("", allColors, 10); // po default-u zeleni
-            settings["backgroundcolor"] = new ColorOption("", allColors, defaultBackgrounColor);
+            if(!RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                settings["backgroundcolor"] = new ColorOption("", allColors, defaultBackgrounColor);
             settings["language"] = new StringOption("", lngs.Keys.ToArray(), Array.IndexOf(lngs.Keys.ToArray(), clng));
             settings["dev-mode"] = new BoolOption("", false);
             return settings;
@@ -529,6 +532,8 @@ namespace MineSweeper
             ConsoleColor defaultBackgrounColor = Console.BackgroundColor;
             ConsoleColor defaultForegroundColor = Console.ForegroundColor;
 
+            SetBackground(ref settings);
+
             string[] menuOptions = GetMenuOptions(ref dict, currlng);
 
             // dimenzije polja
@@ -611,7 +616,7 @@ namespace MineSweeper
             // nego u ASCII
             Console.OutputEncoding = System.Text.Encoding.UTF8;
             
-            const string VERSION = "0.1.3";
+            const string VERSION = "0.1.4";
             int pa = ParseArgs(args, VERSION);
             if (pa == 1) return 0;
             if (pa == -1) return -1;

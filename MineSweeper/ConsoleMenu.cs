@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection.Metadata;
 
 namespace ConsoleMenu
 {
@@ -209,7 +210,7 @@ namespace ConsoleMenu
         public ColorOption(string nm, int[] colors, int valueIndex) : base(nm)
         {
             Colors = colors;
-            ColorIndex = valueIndex;
+            ColorIndex = valueIndex >= 0 && valueIndex < colors.Length ? valueIndex : 0;
         }
         public override void NextValue()
         {
@@ -401,6 +402,7 @@ namespace ConsoleMenu
                 Console.WriteLine("< " + settings[settingNames[i]].ToString() + " >");
             }
             Console.ForegroundColor = consoleColor;
+            Console.WriteLine("(Press Escape to exit settings)");
         }
         public static void ChangeSettings(Dictionary<string, SettingOption> settings, 
                                            (ConsoleColor, ConsoleColor) colors = default)

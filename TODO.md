@@ -1,1 +1,2 @@
-- test it on Linux/Mac os and fix (if needs fix) <code>translates.json</code> and <code>settings.txt</code> saving directory
+- test it on Linux/Mac OS and fix (if needs fix) <code>translates.json</code> and <code>settings.txt</code> saving directory
+- test how works at all on Linux/Mac OS 
