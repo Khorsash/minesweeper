@@ -11,3 +11,9 @@
 - added <code>WriteTranslates</code>, <code>Translates.defaultLanguages</code> to write default translates, keeping possibility to change translates and add another language in <code>translates.json</code>, and from now <code>translates.json</code> and <code>settings.txt</code> are in <code>AppData/Roaming</code> for windows(i haven't actually testing for linux/mac os, so check out <code>TODO.md</code>)
 
 - added color fill for bomb count
+
+<h1> 0.1.4 </h1>
+
+- restructed code, added game <code>MainLoop</code> function, for now <code>Main</code> just serves settings load, running <code>MainLoop</code> and saving settings.
+- added <i><b>dev settings</b></i>, balans variable change and "start zone" 3x3 for easy levels, because I don't think game is good balanced at the moment.
+- tested on Linux(works)
