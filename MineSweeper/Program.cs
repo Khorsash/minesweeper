@@ -46,9 +46,14 @@ namespace MineSweeper
             }
         }
         public ConsoleColor getColor(bool isGameOver, bool isSelected,
-                                        ConsoleColor selColor, ConsoleColor errColor, ConsoleColor defColor)
+                                        ConsoleColor selColor, ConsoleColor errColor,
+                                        ConsoleColor flagSelColor, ConsoleColor defColor)
         {
-            return (isGameOver && isBomb()) || flagged ? errColor : isSelected ? (opened ? errColor : selColor) : NumColor(defColor);
+            return (isGameOver && isBomb())
+                                            ? errColor 
+                                            : isSelected 
+                                                ? (flagged ? flagSelColor : (opened ? errColor : selColor)) 
+                                                : flagged ? errColor : NumColor(defColor);
         }
         public void Open() { opened = true; }
         public void PlantBomb() { value = -1; }
@@ -191,29 +196,40 @@ namespace MineSweeper
         {
             if (!((BoolOption)sttngs["dev-mode"]).Value)
             {
-                if (sttngs.ContainsKey("balance-coefficient")) sttngs.Remove("balance-coefficient");
-                if (sttngs.ContainsKey("startzone-for-easy")) sttngs.Remove("startzone-for-easy");
+                sttngs.Remove("balance-coefficient");
+                sttngs.Remove("startzone-for-easy");
                 return;
             }
-            sttngs["balance-coefficient"] = new IntRangeOption("", 2, 21);
-            ((IntRangeOption)sttngs["balance-coefficient"]).SetValue(k);
-            sttngs["startzone-for-easy"] = new BoolOption("", false);
+            if (!sttngs.ContainsKey("balance-coefficient"))
+            {
+                sttngs["balance-coefficient"] = new IntRangeOption("", 4, 21);
+                ((IntRangeOption)sttngs["balance-coefficient"]).SetValue(k);
+                sttngs["startzone-for-easy"] = new BoolOption("", false);
+            }
         }
-        static void UpdateDevSetting(ref Dictionary<string, SettingOption> sttngs, ref int k)
+        static void UpdateDevSetting(ref Dictionary<string, SettingOption> sttngs, ref int k, ref bool addStartZone,
+                                        ref Dictionary<string, Dictionary<string, string>> dict, ref string currlang)
         {
-            if (((BoolOption)sttngs["dev-mode"]).Value) 
+            if (((BoolOption)sttngs["dev-mode"]).Value)
+            {
                 k = ((IntRangeOption)sttngs["balance-coefficient"]).Value;
+                addStartZone = ((BoolOption)sttngs["startzone-for-easy"]).Value;
+                GetSettingsTranslate(ref sttngs, ref dict, currlang);
+            }
+                
         }
         static Dictionary<string, SettingOption> DefaultSettings(ref Dictionary<string, Dictionary<string, string>> lngs,
                                                                                     string clng)
         {
+            int defaultBackgrounColor = (int)Console.BackgroundColor;
             int[] allColors = ColorOption.AllColors();
             Dictionary<string, SettingOption> settings = new Dictionary<string, SettingOption>();
             settings["gameselectcolor"] = new ColorOption("", allColors, 10); // po default-u zeleni
             settings["gameerrorcolor"] = new ColorOption("", allColors, 12); // po default-u crveni
+            settings["gameflagselectcolor"] = new ColorOption("", allColors, 5); // po default-u magenta
             settings["baseforeground"] = new ColorOption("", allColors, 7); // po default-u sivi
             settings["menuselectcolor"] = new ColorOption("", allColors, 10); // po default-u zeleni
-            settings["backgroundcolor"] = new ColorOption("", allColors, 0); // po default-u crni
+            settings["backgroundcolor"] = new ColorOption("", allColors, defaultBackgrounColor);
             settings["language"] = new StringOption("", lngs.Keys.ToArray(), Array.IndexOf(lngs.Keys.ToArray(), clng));
             settings["dev-mode"] = new BoolOption("", false);
             return settings;
@@ -296,11 +312,12 @@ namespace MineSweeper
         public static void DrawBoard(ref Cell[,] board, int x1, int y1,
                                 bool isGameOver,
                                 ConsoleColor defColor,
-                                (ConsoleColor, ConsoleColor) colors = default,
+                                (ConsoleColor, ConsoleColor, ConsoleColor) colors = default,
                                 string cellisopenedmsg = "")
         {
             ConsoleColor selColor = colors.Item1;
             ConsoleColor errColor = colors.Item2;
+            ConsoleColor flagSelColor = colors.Item3;
 
             Cell chosenCell = board[y1, x1];
             ConsoleColor color;
@@ -312,7 +329,7 @@ namespace MineSweeper
                 for (int j = 0; j < board.GetLength(1); j++)
                 {
                     color = board[i, j].getColor(isGameOver, i == y1 && j == x1,
-                                                        selColor, errColor, defColor);
+                                                        selColor, errColor, flagSelColor, defColor);
                     DrawCell(board[i, j], color, defColor);
                 }
                 Console.WriteLine("|");
@@ -370,15 +387,15 @@ namespace MineSweeper
         }
         public static void GenerateBoard(ref Cell[,] board, (int, int) coords0, int bc = 14, bool addStartZone = false)
         {
-            // List<(int, int)> adjToStartCells = NearCoordsRectangle(ref board, coords0, 1);
+            List<(int, int)> adjToStartCells = NearCoordsRectangle(ref board, coords0, 1);
             List<(int, int)> bombsCreated = new List<(int, int)>();
             Random r = new Random();
             while (bombsCreated.Count < bc)
             {
                 (int, int) coords1 = RandomCoords(ref board, ref r);
-                if (coords1 != coords0 && !bombsCreated.Contains(coords1))
+                if (coords1 != coords0 && !bombsCreated.Contains(coords1) 
+                        && (!addStartZone || !adjToStartCells.Contains(coords1)))
                 {
-                    // && (addStartZone ? adjToStartCells.Contains(coords1) : true)
                     bombsCreated.Add(coords1);
                     board[coords1.Item1, coords1.Item2].PlantBomb();
                     List<(int, int)> cnb = NearCoordsRectangle(ref board, coords1, 1);
@@ -392,11 +409,12 @@ namespace MineSweeper
             FloodFill(ref board, coords0);
         }
         static void MineSweeperGame(ref Dictionary<string, Dictionary<string, string>> lngs, string clng,
-                                     int r = 16, int c = 9, int bc = 14, (ConsoleColor, ConsoleColor) colors = default,
+                                     int r = 16, int c = 9, int bc = 14, int difficulty=1, (ConsoleColor, ConsoleColor, ConsoleColor) colors = default,
                                      bool addStartZone = false)
         {
             bool gameRunning = true;
             bool boardIsGenerated = false;
+            bool addstrtzn = addStartZone && difficulty < 3;
 
             int x = c / 2;
             int y = r / 2 - 1;
@@ -457,7 +475,7 @@ namespace MineSweeper
                         if (board[y, x].isOpened()) break;
                         if (!boardIsGenerated)
                         {
-                            GenerateBoard(ref board, (y, x), bc);
+                            GenerateBoard(ref board, (y, x), bc, addstrtzn);
                             board[y, x].Open();
                             boardIsGenerated = true;
 
@@ -506,7 +524,7 @@ namespace MineSweeper
                                 )
         {
 
-            (ConsoleColor, ConsoleColor) gameColors;
+            (ConsoleColor, ConsoleColor, ConsoleColor) gameColors;
             (ConsoleColor, ConsoleColor) menuColors;
             ConsoleColor defaultBackgrounColor = Console.BackgroundColor;
             ConsoleColor defaultForegroundColor = Console.ForegroundColor;
@@ -534,12 +552,14 @@ namespace MineSweeper
 
 
             bool running = true;
+            int difficulty = ((IntRangeOption)gameMode["difficulty"]).Value;
             while (running)
             {
                 menuColors = (((ColorOption)settings["baseforeground"]).GetColor(),
                                 ((ColorOption)settings["menuselectcolor"]).GetColor());
                 gameColors = (((ColorOption)settings["gameselectcolor"]).GetColor(),
-                                ((ColorOption)settings["gameerrorcolor"]).GetColor());
+                                ((ColorOption)settings["gameerrorcolor"]).GetColor(),
+                                ((ColorOption)settings["gameflagselectcolor"]).GetColor());
                 string ch = Menu.ShowMenu(Menu.Paginate(menuOptions, menuOptions.Length), 0, "Minesweeper " + VERSION, menuColors);
                 switch (Array.IndexOf(menuOptions, ch))
                 {
@@ -547,9 +567,9 @@ namespace MineSweeper
                     case 0:
                         string dmns = gameMode["size"].ToString() ?? "9x16";
                         (int, int) size = sizes[dmns];
-                        int bc = bombCount[dmns] / (k - ((IntRangeOption)gameMode["difficulty"]).Value);
+                        int bc = bombCount[dmns] / (k - difficulty);
                         MineSweeperGame(ref dict, currlng,
-                                            size.Item1, size.Item2, bc, gameColors,
+                                            size.Item1, size.Item2, bc, difficulty, gameColors,
                                             addStartZone);
                         ClearConsole();
                         break;
@@ -557,8 +577,7 @@ namespace MineSweeper
                     case 1:
                         Settings.ChangeSettings(gameMode, menuColors);
                         ClearConsole();
-                        CheckDevSettings(ref settings, k);
-                        UpdateDevSetting(ref settings, ref k);
+                        difficulty = ((IntRangeOption)gameMode["difficulty"]).Value;
                         break;
                     // settings
                     case 2:
@@ -571,6 +590,8 @@ namespace MineSweeper
                             GetSettingsTranslate(ref gameMode, ref dict, currlng);
                         }
                         SetBackground(ref settings);
+                        CheckDevSettings(ref settings, k);
+                        UpdateDevSetting(ref settings, ref k, ref addStartZone, ref dict, ref currlng);
                         ClearConsole();
                         break;
                     // exit

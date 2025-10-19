@@ -1,8 +1,6 @@
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Linq;
-using System.Numerics;
 
 namespace ConsoleMenu
 {
@@ -14,9 +12,10 @@ namespace ConsoleMenu
         public SettingOption(string nm) { Name = nm; }
         public static void ParseAndAddSetting(ref Dictionary<string, SettingOption> settings, string sttng)
         {
-            string key = sttng.Split(":")[0];
-            string type = sttng.Split(":")[1];
-            string content = sttng.Split(":")[2];
+            string[] prms = sttng.Split(":");
+            string key = prms[0];
+            string type = prms[1];
+            string content = prms[2];
             switch (type)
             {
                 case "color":
@@ -24,6 +23,18 @@ namespace ConsoleMenu
                     break;
                 case "string":
                     settings[key] = StringOption.ParseFrom(content);
+                    break;
+                case "bool":
+                    settings[key] = BoolOption.ParseFrom(content);
+                    break;
+                case "int":
+                    settings[key] = IntOption.ParseFrom(content);
+                    break;
+                case "double":
+                    settings[key] = DoubleOption.ParseFrom(content);
+                    break;
+                case "intrange":
+                    settings[key] = IntRangeOption.ParseFrom(content);
                     break;
             }
         }
@@ -85,7 +96,11 @@ namespace ConsoleMenu
             return Value.ToString();
         }
         public override string Format(string keyName)
-        { return ""; }
+        { return keyName + ":bool:" + ToString(); }
+        public static BoolOption ParseFrom(string content)
+        {
+            return new BoolOption("", content == true.ToString());
+        }
     }
     public class IntOption : SettingOption
     {
@@ -110,11 +125,16 @@ namespace ConsoleMenu
             return Value.ToString();
         }
         public override string Format(string keyName)
-        { return ""; }
+        { return keyName + ":int:" + $"{Value},{Step}"; }
+        public static IntOption ParseFrom(string content)
+        {
+            int[] prms = content.Split(",").Select(int.Parse).ToArray();
+            return new IntOption("", prms[0], prms[1]);
+        } 
     }
     public class IntRangeOption : SettingOption
     {
-        public int Value;
+        public int Value { get; private set; }
         private int Step;
         private int Start;
         private int End;
@@ -143,7 +163,14 @@ namespace ConsoleMenu
             return Value.ToString();
         }
         public override string Format(string keyName)
-        { return ""; }
+        { return keyName + ":intrange:" + $"{Start},{End},{Step},{Value}"; }
+        public static IntRangeOption ParseFrom(string content)
+        {
+            int[] prms = content.Split(",").Select(int.Parse).ToArray();
+            IntRangeOption iro = new IntRangeOption("", prms[0], prms[1], prms[2]);
+            iro.SetValue(prms[3]);
+            return iro;
+        }
     }
     public class DoubleOption : SettingOption
     {
@@ -168,7 +195,12 @@ namespace ConsoleMenu
             return Value.ToString();
         }
         public override string Format(string keyName)
-        { return ""; }
+        { return keyName + ":double:" + $"{Value},{Step}"; }
+        public static DoubleOption ParseFrom(string content)
+        {
+            double[] prms = content.Split(",").Select(double.Parse).ToArray();
+            return new DoubleOption("", prms[0], prms[1]);
+        }
     }
     public class ColorOption: SettingOption
     {
@@ -214,7 +246,7 @@ namespace ConsoleMenu
         }
         public override string Format(string keyName)
         {
-            return keyName + ":color:" + Colors[ColorIndex].ToString();
+            return keyName+":color:"+Colors[ColorIndex].ToString();
         }
     }
     class Menu
